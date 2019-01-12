@@ -140,10 +140,9 @@ namespace {
       }
 
       if (auto AI = dyn_cast_or_null<AllocaInst>(PtrOperand))
-          if(isInterestingAlloca(*AI)){
-              dbgs() << "@@@@@@@@@@@@@@@@@@@@@@@@*AI: " << *AI << "\n";
-          } else {
+          if(isProbablyNotAlloca(*AI) == false){
                dbgs() << " ###########AI: " << *AI << "\n";
+                return nullptr;
           }
 
       //ValueIns = &PtrValue;
@@ -244,7 +243,7 @@ namespace {
     DenseMap<const AllocaInst *, bool> ProcessedAllocas;
 
     /// Check if we want (and can) handle this alloca.
-    bool isInterestingAlloca(const AllocaInst &AI) {
+    bool isProbablyNotAlloca(const AllocaInst &AI) {
       auto PreviouslySeenAllocaInfo = ProcessedAllocas.find(&AI);
 
       if (PreviouslySeenAllocaInfo != ProcessedAllocas.end())
