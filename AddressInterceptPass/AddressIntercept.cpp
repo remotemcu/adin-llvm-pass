@@ -17,11 +17,18 @@
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/LLVMContext.h"
 
+#include "llvm/Analysis/ValueTracking.h"
+
+#include "llvm/Transforms/Utils/PromoteMemToReg.h"
+#include <cassert>
+
+
 using namespace llvm;
 
 #define DEBUG_TYPE "AddressInterceptPass"
 
 namespace {
+
   struct AddressInterceptPass : public FunctionPass {
     static char ID;
     AddressInterceptPass() : FunctionPass(ID) {}
@@ -39,12 +46,17 @@ namespace {
           IRBuilder<> IRB(*C);
           IntptrTy = IRB.getIntPtrTy(DL);
 
-          MemmoveFn = M.getOrInsertFunction("__ttt__", IRB.getVoidTy(), IRB.getInt8PtrTy(),
+          MemmoveFn = M.getOrInsertFunction("__ttt__", IRB.getVoidTy(), IRB.getInt8PtrTy(), IRB.getInt32Ty(),
                                             IRB.getInt32Ty(), IRB.getInt32Ty(), IRB.getInt1Ty());
+
+          assert(ProcessedAllocas.empty() &&
+                       "last pass forgot to clear cache");
     }
 
     virtual bool runOnFunction(Function &F) {
       dbgs() << "Function: " << F.getName() << "\n";
+
+      markEscapedLocalAllocas(F);
 
       bool Changed = false;
       SmallVector<Instruction*, 16> ToInstrument;
@@ -52,10 +64,11 @@ namespace {
       for (auto &BB : F) {
           for (auto &Inst : BB) {
             Value *MaybeMask = nullptr;
+            Value * ValueIns;
             bool IsWrite;
             unsigned Alignment;
             uint64_t TypeSize;
-            Value *Addr = isInterestingMemoryAccess(&Inst, &IsWrite, &TypeSize,
+            Value *Addr = isInterestingMemoryAccess(&Inst, &ValueIns, &IsWrite, &TypeSize,
                                                     &Alignment, &MaybeMask);
             if (Addr || isa<MemIntrinsic>(Inst)){
                 dbgs() << IsWrite << " | " << Alignment << " | " << TypeSize  << "\n";
@@ -72,25 +85,33 @@ namespace {
     }
 
     Value * isInterestingMemoryAccess(Instruction *I,
+                                      Value ** ValueIns,
                                                        bool *IsWrite,
                                                        uint64_t *TypeSize,
                                                        unsigned *Alignment,
                                                        Value **MaybeMask) {
 
       Value *PtrOperand = nullptr;
+      Value *PtrValue = nullptr;
       const DataLayout &DL = I->getModule()->getDataLayout();
+#if 0
       if (LoadInst *LI = dyn_cast<LoadInst>(I)) {
         *IsWrite = false;
         *TypeSize = DL.getTypeStoreSizeInBits(LI->getType());
         *Alignment = LI->getAlignment();
         PtrOperand = LI->getPointerOperand();
-      } else if (StoreInst *SI = dyn_cast<StoreInst>(I)) {
+        dbgs() << "LoadInst "   << "\n";
+      } else
+      #endif
+          if (StoreInst *SI = dyn_cast<StoreInst>(I)) {
         *IsWrite = true;
         *TypeSize = DL.getTypeStoreSizeInBits(SI->getValueOperand()->getType());
         *Alignment = SI->getAlignment();
         PtrOperand = SI->getPointerOperand();
+        *ValueIns = SI->getValueOperand();
+        dbgs() << "StoreInst "  << *ValueIns << "\n";
       }
-#if 1
+#if 0
       else if (AtomicRMWInst *RMW = dyn_cast<AtomicRMWInst>(I)) {
         *IsWrite = true;
         *TypeSize = DL.getTypeStoreSizeInBits(RMW->getValOperand()->getType());
@@ -118,6 +139,15 @@ namespace {
           return nullptr;
       }
 
+      if (auto AI = dyn_cast_or_null<AllocaInst>(PtrOperand))
+          if(isInterestingAlloca(*AI)){
+              dbgs() << "@@@@@@@@@@@@@@@@@@@@@@@@*AI: " << *AI << "\n";
+          } else {
+               dbgs() << " ###########AI: " << *AI << "\n";
+          }
+
+      //ValueIns = &PtrValue;
+
       return PtrOperand;
     }
 
@@ -138,8 +168,9 @@ namespace {
       unsigned Alignment = 0;
       uint64_t TypeSize = 0;
       Value *MaybeMask = nullptr;
+      Value * ValueIns = nullptr;
       Value *Addr =
-          isInterestingMemoryAccess(I, &IsWrite, &TypeSize, &Alignment, &MaybeMask);
+          isInterestingMemoryAccess(I, &ValueIns, &IsWrite, &TypeSize, &Alignment, &MaybeMask);
 
       if (!Addr)
         return false;
@@ -148,9 +179,21 @@ namespace {
         return false; //FIXME
 
       IRBuilder<> IRB(I);
-
+#if 1
+      if (ValueIns){
+          dbgs() << "ValueIns   " << *ValueIns <<  "\n";
+      }
+#endif
 
       Value *AddrLong = IRB.CreatePointerCast(Addr, IntptrTy);
+
+      Value *ValueLong = IRB.CreateIntCast(ValueIns, IRB.getInt32Ty(), true);
+
+
+      if (ValueLong){
+          dbgs() << "ValueLong   " << *ValueLong << "   getType  " << *ValueIns->getType() <<   "\n";
+
+      }
 
       const bool isPowerOf2 = isPowerOf2_64(TypeSize);
       const bool typeLessThan_16s8 = (TypeSize / 8 <= (1UL << (kNumberOfAccessSizes - 1)));
@@ -163,11 +206,14 @@ namespace {
              Alignment >= TypeSize / 8)) {
           size_t AccessSizeIndex = TypeSizeToSizeIndex(TypeSize);
 
-          dbgs() << "isPowerOf2_64" << " |AccessSizeIndex  " << AccessSizeIndex << " |isPowerOf2  " << isPowerOf2 << " |typeLessThan_16s8  "
+          dbgs() <<
+                    " |AccessSizeIndex  " << AccessSizeIndex << " |isPowerOf2  " << isPowerOf2 << " |typeLessThan_16s8  "
                  << typeLessThan_16s8 << " |AlignmentNormilize " << AlignmentNormilize << "\n";
 
           std::vector<Value *> ArgsV;
           ArgsV.push_back(AddrLong);
+
+          ArgsV.push_back(ValueLong);
 
           ConstantInt * TypeSizeArg = IRB.getInt32(TypeSize);
           ArgsV.push_back(TypeSizeArg);
@@ -180,8 +226,9 @@ namespace {
 
           IRB.CreateCall(MemmoveFn,ArgsV);
 
+
+
           I->eraseFromParent();
-          //I->removeFromParent();
 
 
       } else {
@@ -193,6 +240,73 @@ namespace {
     }
 
     Function *callback;
+
+    DenseMap<const AllocaInst *, bool> ProcessedAllocas;
+
+    /// Check if we want (and can) handle this alloca.
+    bool isInterestingAlloca(const AllocaInst &AI) {
+      auto PreviouslySeenAllocaInfo = ProcessedAllocas.find(&AI);
+
+      if (PreviouslySeenAllocaInfo != ProcessedAllocas.end())
+        return PreviouslySeenAllocaInfo->getSecond();
+      bool IsInteresting =
+          (AI.getAllocatedType()->isSized() &&
+           // alloca() may be called with 0 size, ignore it.
+           ((!AI.isStaticAlloca()) || getAllocaSizeInBytes(AI) > 0) &&
+           // We are only interested in allocas not promotable to registers.
+           // Promotable allocas are common under -O0.
+           (!isAllocaPromotable(&AI)) &&
+           // inalloca allocas are not treated as static, and we don't want
+           // dynamic alloca instrumentation for them as well.
+           !AI.isUsedWithInAlloca() &&
+           // swifterror allocas are register promoted by ISel
+           !AI.isSwiftError());
+
+      ProcessedAllocas[&AI] = IsInteresting;
+      return IsInteresting;
+    }
+
+    uint64_t getAllocaSizeInBytes(const AllocaInst &AI) const {
+        uint64_t ArraySize = 1;
+        if (AI.isArrayAllocation()) {
+          const ConstantInt *CI = dyn_cast<ConstantInt>(AI.getArraySize());
+          assert(CI && "non-constant array size");
+          ArraySize = CI->getZExtValue();
+        }
+        Type *Ty = AI.getAllocatedType();
+        uint64_t SizeInBytes =
+            AI.getModule()->getDataLayout().getTypeAllocSize(Ty);
+        return SizeInBytes * ArraySize;
+      }
+
+    void markEscapedLocalAllocas(Function &F) {
+      // Find the one possible call to llvm.localescape and pre-mark allocas passed
+      // to it as uninteresting. This assumes we haven't started processing allocas
+      // yet. This check is done up front because iterating the use list in
+      // isInterestingAlloca would be algorithmically slower.
+      assert(ProcessedAllocas.empty() && "must process localescape before allocas");
+
+      // Try to get the declaration of llvm.localescape. If it's not in the module,
+      // we can exit early.
+      if (!F.getParent()->getFunction("llvm.localescape")) return;
+
+      // Look for a call to llvm.localescape call in the entry block. It can't be in
+      // any other block.
+      for (Instruction &I : F.getEntryBlock()) {
+        IntrinsicInst *II = dyn_cast<IntrinsicInst>(&I);
+        if (II && II->getIntrinsicID() == Intrinsic::localescape) {
+          // We found a call. Mark all the allocas passed in as uninteresting.
+          for (Value *Arg : II->arg_operands()) {
+            AllocaInst *AI = dyn_cast<AllocaInst>(Arg->stripPointerCasts());
+            assert(AI && AI->isStaticAlloca() &&
+                   "non-static alloca arg to localescape");
+            ProcessedAllocas[AI] = false;
+          }
+          break;
+        }
+      }
+    }
+
   };
 }
 
