@@ -77,16 +77,20 @@ namespace {
             Value *Addr = isInterestingMemoryAccess(&Inst, &ValueIns, &IsWrite, &TypeSize,
                                                     &Alignment, &MaybeMask);
             if (Addr || isa<MemIntrinsic>(Inst)){
-                dbgs() << IsWrite << " | " << Alignment << " | " << TypeSize  << "\n";
+                dbgs() << Inst << " | IsWrite  " << IsWrite << "!!!!!!!!!!!!!\n";
 
                 ToInstrument.push_back(&Inst);
             }
         }
       }
 
+      dbgs() << "ToInstrument : " << ToInstrument.size() << "\n";
+
+
       for (auto Inst : ToInstrument){
-          //Changed |= instrumentMemAccessWrite(Inst);
-          Changed |= instrumentMemAccessRead(Inst);
+          Changed |= instrumentMemAccessWrite(Inst)
+              ||
+              instrumentMemAccessRead(Inst);
       }
 
       ProcessedAllocas.clear();
@@ -112,7 +116,6 @@ namespace {
         PtrOperand = LI->getPointerOperand();
         dbgs() << "LoadInst "   << "\n";
       }
-      #if 1
       else
           if (StoreInst *SI = dyn_cast<StoreInst>(I)) {
         *IsWrite = true;
@@ -122,7 +125,6 @@ namespace {
         *ValueIns = SI->getValueOperand();
         dbgs() << "StoreInst "  << *ValueIns << "\n";
       }
-      #endif
 #if 0
       else if (AtomicRMWInst *RMW = dyn_cast<AtomicRMWInst>(I)) {
         *IsWrite = true;
@@ -175,7 +177,7 @@ namespace {
 
     bool instrumentMemAccessRead(Instruction *I) {
 
-        dbgs() << "Instrumenting: " << *I << "\n";
+        dbgs() << "instrumentMemAccessRead: " << *I << "\n";
         bool IsWrite = false;
         unsigned Alignment = 0;
         uint64_t TypeSize = 0;
@@ -189,6 +191,9 @@ namespace {
 
         if (MaybeMask)
           return false; //FIXME
+
+        if(IsWrite)
+            return false;
 
          IRBuilder<> IRB(I);
 
@@ -256,7 +261,7 @@ namespace {
     }
 
     bool instrumentMemAccessWrite(Instruction *I) {
-      dbgs() << "Instrumenting: " << *I << "\n";
+      dbgs() << "instrumentMemAccessWrite: " << *I << "\n";
       bool IsWrite = false;
       unsigned Alignment = 0;
       uint64_t TypeSize = 0;
@@ -270,6 +275,9 @@ namespace {
 
       if (MaybeMask)
         return false; //FIXME
+
+      if(IsWrite == false)
+          return false;
 
       IRBuilder<> IRB(I);
 #if 1
