@@ -36,6 +36,7 @@ namespace {
     Type *IntptrTy;
     Function *CalleeF;
     Value *MemmoveFn;
+    Value *MemLoadFn;
 
     bool doInitialization(Module &M) override {
         DEBUG(dbgs() << "Init " << M.getName() << "\n");
@@ -46,8 +47,13 @@ namespace {
           IRBuilder<> IRB(*C);
           IntptrTy = IRB.getIntPtrTy(DL);
 
-          MemmoveFn = M.getOrInsertFunction("__ttt__", IRB.getVoidTy(), IRB.getInt8PtrTy(), IRB.getInt32Ty(),
-                                            IRB.getInt32Ty(), IRB.getInt32Ty(), IRB.getInt1Ty());
+          MemmoveFn = M.getOrInsertFunction("__store__", IRB.getVoidTy(), IRB.getInt8PtrTy(), IRB.getInt32Ty(),
+                                            IRB.getInt32Ty(), IRB.getInt32Ty());
+
+          //MemmoveFn = M.getOrInsertFunction("__test__", IRB.getVoidTy(),IRB.getInt32Ty(), IRB.getInt32Ty());
+
+          MemLoadFn = M.getOrInsertFunction("__load__", IRB.getInt32Ty(), IRB.getInt8PtrTy(),
+                                            IRB.getInt32Ty(), IRB.getInt32Ty());
 
           assert(ProcessedAllocas.empty() &&
                        "last pass forgot to clear cache");
@@ -78,8 +84,12 @@ namespace {
         }
       }
 
-      for (auto Inst : ToInstrument)
-          Changed |= instrumentMemAccess(Inst);
+      for (auto Inst : ToInstrument){
+          //Changed |= instrumentMemAccessWrite(Inst);
+          Changed |= instrumentMemAccessRead(Inst);
+      }
+
+      ProcessedAllocas.clear();
 
       return false;
     }
@@ -94,15 +104,16 @@ namespace {
       Value *PtrOperand = nullptr;
       Value *PtrValue = nullptr;
       const DataLayout &DL = I->getModule()->getDataLayout();
-#if 0
+
       if (LoadInst *LI = dyn_cast<LoadInst>(I)) {
         *IsWrite = false;
         *TypeSize = DL.getTypeStoreSizeInBits(LI->getType());
         *Alignment = LI->getAlignment();
         PtrOperand = LI->getPointerOperand();
         dbgs() << "LoadInst "   << "\n";
-      } else
-      #endif
+      }
+      #if 1
+      else
           if (StoreInst *SI = dyn_cast<StoreInst>(I)) {
         *IsWrite = true;
         *TypeSize = DL.getTypeStoreSizeInBits(SI->getValueOperand()->getType());
@@ -111,6 +122,7 @@ namespace {
         *ValueIns = SI->getValueOperand();
         dbgs() << "StoreInst "  << *ValueIns << "\n";
       }
+      #endif
 #if 0
       else if (AtomicRMWInst *RMW = dyn_cast<AtomicRMWInst>(I)) {
         *IsWrite = true;
@@ -161,7 +173,89 @@ namespace {
       return Res;
     }
 
-    bool instrumentMemAccess(Instruction *I) {
+    bool instrumentMemAccessRead(Instruction *I) {
+
+        dbgs() << "Instrumenting: " << *I << "\n";
+        bool IsWrite = false;
+        unsigned Alignment = 0;
+        uint64_t TypeSize = 0;
+        Value *MaybeMask = nullptr;
+        Value * ValueIns = nullptr;
+        Value *Addr =
+            isInterestingMemoryAccess(I, &ValueIns, &IsWrite, &TypeSize, &Alignment, &MaybeMask);
+
+        if (!Addr)
+          return false;
+
+        if (MaybeMask)
+          return false; //FIXME
+
+         IRBuilder<> IRB(I);
+
+        if (ValueIns){
+            dbgs() << "ValueIns   " << *ValueIns <<  "\n";
+        }
+
+        Value *AddrLong = IRB.CreatePointerCast(Addr, IRB.getInt8PtrTy());
+
+        const bool isPowerOf2 = isPowerOf2_64(TypeSize);
+        const bool typeLessThan_16s8 = (TypeSize / 8 <= (1UL << (kNumberOfAccessSizes - 1)));
+        const bool AlignmentNormilize = (Alignment >= (1UL << kShadowScale) || Alignment == 0 ||
+         Alignment >= TypeSize / 8);
+
+        if (isPowerOf2_64(TypeSize) &&
+              (TypeSize / 8 <= (1UL << (kNumberOfAccessSizes - 1))) &&
+              (Alignment >= (1UL << kShadowScale) || Alignment == 0 ||
+               Alignment >= TypeSize / 8)) {
+            size_t AccessSizeIndex = TypeSizeToSizeIndex(TypeSize);
+
+        dbgs() << *AddrLong << "   " << AddrLong->getType() <<
+                      " |AccessSizeIndex  " << AccessSizeIndex << " |isPowerOf2  " << isPowerOf2 << " |typeLessThan_16s8  "
+                   << typeLessThan_16s8 << " |AlignmentNormilize " << AlignmentNormilize << "\n";
+
+            std::vector<Value *> ArgsV;
+            ArgsV.push_back(AddrLong);
+
+            ConstantInt * TypeSizeArg = IRB.getInt32(TypeSize);
+            ArgsV.push_back(TypeSizeArg);
+
+            ConstantInt * AlignmentArg = IRB.getInt32(Alignment);
+             ArgsV.push_back(AlignmentArg);
+
+            Instruction * rep = IRB.CreateCall(MemLoadFn,ArgsV);
+
+            Type * typeLoadOperand = rep->getType();
+
+            switch (TypeSize) {
+            case 1:
+                typeLoadOperand = IRB.getInt1Ty();
+                break;
+            case 8:
+                typeLoadOperand = IRB.getInt8Ty();
+                break;
+            case 16:
+                typeLoadOperand = IRB.getInt16Ty();
+                break;
+            case 32:
+                break;
+            default:
+                llvm_unreachable("Size issue!");
+                break;
+            }
+
+
+            Value * trunc = IRB.CreateTrunc(rep, typeLoadOperand);
+
+            I->replaceAllUsesWith(trunc);
+
+            I->eraseFromParent();
+
+        }
+
+        return true;
+    }
+
+    bool instrumentMemAccessWrite(Instruction *I) {
       dbgs() << "Instrumenting: " << *I << "\n";
       bool IsWrite = false;
       unsigned Alignment = 0;
@@ -184,7 +278,7 @@ namespace {
       }
 #endif
 
-      Value *AddrLong = IRB.CreatePointerCast(Addr, IntptrTy);
+      Value *AddrLong = IRB.CreatePointerCast(Addr, IRB.getInt8PtrTy());
 
       Value *ValueLong = IRB.CreateIntCast(ValueIns, IRB.getInt32Ty(), true);
 
@@ -210,9 +304,12 @@ namespace {
                  << typeLessThan_16s8 << " |AlignmentNormilize " << AlignmentNormilize << "\n";
 
           std::vector<Value *> ArgsV;
+
+          #if 1
           ArgsV.push_back(AddrLong);
 
           ArgsV.push_back(ValueLong);
+#endif
 
           ConstantInt * TypeSizeArg = IRB.getInt32(TypeSize);
           ArgsV.push_back(TypeSizeArg);
@@ -220,12 +317,7 @@ namespace {
           ConstantInt * AlignmentArg = IRB.getInt32(Alignment);
            ArgsV.push_back(AlignmentArg);
 
-          ConstantInt * IsWrite = IRB.getInt1(IsWrite);
-           ArgsV.push_back(IsWrite);
-
           IRB.CreateCall(MemmoveFn,ArgsV);
-
-
 
           I->eraseFromParent();
 
@@ -283,6 +375,7 @@ namespace {
       // to it as uninteresting. This assumes we haven't started processing allocas
       // yet. This check is done up front because iterating the use list in
       // isInterestingAlloca would be algorithmically slower.
+      dbgs() << "ProcessedAllocas.size() = " << ProcessedAllocas.size() << "\n";
       assert(ProcessedAllocas.empty() && "must process localescape before allocas");
 
       // Try to get the declaration of llvm.localescape. If it's not in the module,
