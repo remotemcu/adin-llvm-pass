@@ -12,24 +12,30 @@ using namespace llvm;
 
 class AllocaRecognize{
 
-    bool enable;
     llvm::DenseMap<const llvm::AllocaInst *, bool> ProcessedAllocas;
 
     bool isProbablyNotAllocaOperation(Value *PtrOperand);
 
 public:
 
-    explicit AllocaRecognize(const bool enable= true)
-        : enable(enable) {}
+    explicit AllocaRecognize(Function &F) {
+        markEscapedLocalAllocas(F);
+    }
+
+    ~AllocaRecognize() {
+        exitFunction();
+    }
+
+    bool isProbablyAllocaOperation(Value *PtrOperand){
+        return !isProbablyNotAllocaOperation(PtrOperand);
+    }
+
+private:
 
     void markEscapedLocalAllocas(Function &F);
 
     void exitFunction(){
         ProcessedAllocas.clear();
-    }
-
-    bool isProbablyAllocaOperation(Value *PtrOperand){
-        return !isProbablyNotAllocaOperation(PtrOperand);
     }
 
 };

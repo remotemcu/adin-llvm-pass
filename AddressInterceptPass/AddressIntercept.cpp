@@ -59,15 +59,13 @@ namespace aip{
 
       static char ID;
 
-      AllocaRecognize AllocaRecognizer;
-
     AddressInterceptPass() : FunctionPass(ID) {}
 
 
     bool doInitialization(Module &M) override {
         dbgs() << "Init " << M.getName() << "\n";
 
-        initMemFn(M, "__store__","__load__");
+        initMemFn(M, NameCallbackStore, NameCallbackLoad);
 
         return false;
     }
@@ -75,7 +73,7 @@ namespace aip{
     virtual bool runOnFunction(Function &F) {
         dbgs() << "Function: " << F.getName() << "\n";
 
-        AllocaRecognizer.markEscapedLocalAllocas(F);
+        AllocaRecognize AllocaRecognizer(F);
 
         bool Changed = false;
         SmallVector<Instruction*, 16> ToInstrument;
@@ -109,8 +107,6 @@ namespace aip{
         for (auto Inst : ToInstrument){
             Changed |= instrumentMemAccess(Inst);
         }
-
-        AllocaRecognizer.exitFunction();
 
         return Changed;
     }
