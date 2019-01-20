@@ -83,10 +83,6 @@ namespace adin{
                 if(isInterestingMemoryAccess(&Inst, op) == false)
                     continue;
 
-                if (auto AI = dyn_cast_or_null<AllocaInst>(op.PtrOperand)){
-                     dbgs() << "dyn_cast_or_null Inst Alloca : " << Inst << "\n";
-                }
-
                 if(AllocaRecognizer.isProbablyAllocaOperation(op.PtrOperand)){
                     dbgs() << "Inst Alloca : " << Inst << "\n";
                     continue;
