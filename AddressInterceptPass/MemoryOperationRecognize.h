@@ -22,12 +22,3 @@ bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op);
 } //namespace
 
 #endif // MEMORYOPERATIONRECOGNIZE_H
-
-
-       /*
-class MemoryOperationRecognize
-{
-public:
-MemoryOperationRecognize();
-};
-*/
