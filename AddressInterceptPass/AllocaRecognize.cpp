@@ -23,7 +23,7 @@
 #include "llvm/Transforms/Utils/PromoteMemToReg.h"
 #include <cassert>
 
-namespace aip {
+namespace adin {
 
 void AllocaRecognize::markEscapedLocalAllocas(Function &F) {
     // Find the one possible call to llvm.localescape and pre-mark allocas passed

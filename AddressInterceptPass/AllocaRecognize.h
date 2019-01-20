@@ -6,7 +6,7 @@
 #include "llvm/IR/Instructions.h"
 
 
-namespace aip {
+namespace adin {
 
 using namespace llvm;
 

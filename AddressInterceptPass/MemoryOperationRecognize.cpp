@@ -11,7 +11,7 @@
 #include "llvm/IR/Intrinsics.h"
 
 
-namespace aip {
+namespace adin {
 
 
 bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op)

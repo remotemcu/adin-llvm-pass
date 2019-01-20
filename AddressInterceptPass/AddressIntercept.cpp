@@ -53,7 +53,7 @@ static cl::opt<bool> ClInstrumentReads("adin-alloca-address-skip",
 
 
 
-namespace aip{
+namespace adin{
 
   struct AddressInterceptPass : public FunctionPass {
 
@@ -114,7 +114,7 @@ namespace aip{
   };
 }
 
-using namespace aip;
+using namespace adin;
 
 char AddressInterceptPass::ID = 0;
 
