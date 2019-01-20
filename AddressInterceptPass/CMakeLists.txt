@@ -4,6 +4,7 @@ add_library(AddressInterceptPass MODULE
     AllocaRecognize
     MemoryOperationRecognize
     InlineInstrumentation
+    Logger
 )
 
 # Use C++11 to compile your pass (i.e., supply -std=c++11).
