@@ -22,6 +22,7 @@
 #include "InlineInstrumentation.h"
 #include "MemoryOperationRecognize.h"
 #include "AllocaRecognize.h"
+#include "Logger.h"
 
 
 using namespace llvm;
@@ -60,7 +61,7 @@ namespace adin{
 
 
     bool doInitialization(Module &M) override {
-        dbgs() << "Init " << M.getName() << "\n";
+        ADIN_LOG(_DEBUG) << "Init " << M.getName();
 
         initMemFn(M, NameCallbackStore, NameCallbackLoad);
 
@@ -68,7 +69,7 @@ namespace adin{
     }
 
     virtual bool runOnFunction(Function &F) {
-        dbgs() << "Function: " << F.getName() << "\n";
+        ADIN_LOG(_DEBUG) << "Function: " << F.getName();
 
         AllocaRecognize AllocaRecognizer(F);
 
@@ -84,7 +85,7 @@ namespace adin{
                     continue;
 
                 if(AllocaRecognizer.isProbablyAllocaOperation(op.PtrOperand)){
-                    dbgs() << "Inst Alloca : " << Inst << "\n";
+                    ADIN_LOG(_DEBUG) << "Inst Alloca : " << Inst << "\n";
                     continue;
                 }
 
@@ -94,8 +95,7 @@ namespace adin{
             }
         }
 
-        dbgs() << "ToInstrument : " << ToInstrument.size() << "\n";
-
+        ADIN_LOG(_DEBUG) << "Qty of instrumenting parts: " << ToInstrument.size();
 
         for (auto Inst : ToInstrument){
             Changed |= instrumentMemAccess(Inst);

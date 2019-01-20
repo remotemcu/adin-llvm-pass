@@ -10,6 +10,7 @@
 
 #include "InlineInstrumentation.h"
 #include "MemoryOperationRecognize.h"
+#include "Logger.h"
 
 namespace adin {
 
@@ -35,7 +36,7 @@ void initMemFn(Module &M, std::string NameStore, std::string NameLoad){
 
 bool instrumentMemAccess(Instruction *I)
 {
-    dbgs() << "instrumentMemAccessRead: " << *I << "\n";
+    ADIN_LOG(_DEBUG) << "instrumenting: " << *I;
     AttributMemOperation op;
 
     if(!isInterestingMemoryAccess(I, op))
@@ -52,7 +53,11 @@ bool instrumentMemAccess(Instruction *I)
     const bool instrumentEnable = isPowerOf2 && typeLessThan_16s8 && AlignmentNormilize;
 
     if(instrumentEnable == false){
-        llvm_unreachable("instrumentEnable == false");
+        ADIN_LOG(_ERROR) << "current instruction: " << *I;
+        ADIN_LOG(_ERROR) << "current operation size: " <<  op.TypeSize << " should be power of 2";
+        ADIN_LOG(_ERROR) << "current Alignment: " <<  op.Alignment << " should be more  << " << (1UL << kShadowScale)
+                         << " or equal zero or more " <<  op.TypeSize;
+        llvm_unreachable("strange fortune - check bitcode^");
         return false;
     }
 
@@ -95,7 +100,9 @@ bool instrumentMemAccess(Instruction *I)
         case 32:
             break;
         default:
-            llvm_unreachable("Size issue!");
+            ADIN_LOG(_ERROR) << "current instruction: " << *I;
+            ADIN_LOG(_ERROR) << "operand size: " << op.TypeSize;
+            llvm_unreachable("unknown size of operation^");
             break;
         }
 
