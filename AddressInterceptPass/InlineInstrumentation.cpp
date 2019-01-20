@@ -1,6 +1,3 @@
-#include "InlineInstrumentation.h"
-#include "MemoryOperationRecognize.h"
-
 #include "llvm/Support/Debug.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Value.h"
@@ -10,6 +7,9 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Intrinsics.h"
+
+#include "InlineInstrumentation.h"
+#include "MemoryOperationRecognize.h"
 
 namespace adin {
 

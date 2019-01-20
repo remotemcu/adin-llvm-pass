@@ -1,10 +1,8 @@
-#include "AllocaRecognize.h"
 #include "llvm/Pass.h"
 #include "llvm/IR/Function.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
-
 #include "llvm/Support/Debug.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
@@ -17,11 +15,12 @@
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/LLVMContext.h"
-
 #include "llvm/Analysis/ValueTracking.h"
-
 #include "llvm/Transforms/Utils/PromoteMemToReg.h"
 #include <cassert>
+
+#include "AllocaRecognize.h"
+
 
 namespace adin {
 
