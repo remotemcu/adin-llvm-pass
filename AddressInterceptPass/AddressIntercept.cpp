@@ -63,7 +63,8 @@ namespace adin{
     }
 
     bool doInitialization(Module &M) override {
-        ADIN_LOG(_DEBUG) << "Init " << M.getName();
+
+        ADIN_LOG(_DEBUG) << "Init module" << M.getName();
 
         initMemFn(M, NameCallbackStore, NameCallbackLoad);
 
