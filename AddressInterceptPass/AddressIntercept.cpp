@@ -69,7 +69,7 @@ namespace adin{
     }
 
     virtual bool runOnFunction(Function &F) {
-        ADIN_LOG(_DEBUG) << "Function: " << F.getName();
+        ADIN_LOG(_DEBUG) << "Examine function: " << F.getName();
 
         AllocaRecognize AllocaRecognizer(F);
 
