@@ -45,7 +45,7 @@ static cl::opt<std::string> NameCallbackLoad(
     cl::desc("Set name callback of load operation. Default __adin_load_"),
     cl::Hidden, cl::init("__adin_load_"));
 
-static cl::opt<bool> ClInstrumentReads("adin-alloca-address-skip",
+static cl::opt<bool> AllocaAddressSkip("adin-alloca-address-skip",
                                        cl::desc("Skip intercept address on alloca frame (Stack var)"),
                                        cl::Hidden, cl::init(true));
 
@@ -72,6 +72,7 @@ namespace adin{
     }
 
     virtual bool runOnFunction(Function &F) {
+
         ADIN_LOG(_DEBUG) << "Examine function: " << F.getName();
 
         AllocaRecognize AllocaRecognizer(F);
@@ -87,8 +88,10 @@ namespace adin{
                 if(isInterestingMemoryAccess(&Inst, op) == false)
                     continue;
 
-                if(AllocaRecognizer.isProbablyAllocaOperation(op.PtrOperand)){
-                    ADIN_LOG(_DEBUG) << "Inst Alloca : " << Inst << "\n";
+                if((AllocaAddressSkip.getValue() == false)
+                        &&
+                        AllocaRecognizer.isProbablyAllocaOperation(op.PtrOperand)){
+                    ADIN_LOG(_DEBUG) << "Inst Alloca skip: " << Inst;
                     continue;
                 }
 
