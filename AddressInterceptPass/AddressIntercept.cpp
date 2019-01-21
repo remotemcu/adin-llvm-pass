@@ -114,6 +114,10 @@ using namespace adin;
 
 char AddressInterceptPass::ID = 0;
 
+static RegisterPass<AddressInterceptPass> X("adin", "Hello World Pass",
+                             false /* Only looks at CFG */,
+                             false /* Analysis Pass */);
+
 // Automatically enable the pass.
 
 static void registerAddressInterceptPass(const PassManagerBuilder &,
