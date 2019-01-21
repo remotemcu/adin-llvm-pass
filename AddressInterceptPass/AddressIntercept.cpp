@@ -57,8 +57,10 @@ namespace adin{
 
       static char ID;
 
-    AddressInterceptPass() : FunctionPass(ID) {}
-
+    AddressInterceptPass() : FunctionPass(ID) {
+        Log::setGLevel(static_cast<LevelDebug>(VerboseLevel.getValue()));
+        ADIN_LOG(_DEBUG) << "Set verbose level : " << VerboseLevel;
+    }
 
     bool doInitialization(Module &M) override {
         ADIN_LOG(_DEBUG) << "Init " << M.getName();
