@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+
 #include "Logger.h"
 
 
@@ -21,7 +22,7 @@ int Log::loggerf (const LevelDebug level, const std::string &fileName,
     if (level > gLevel)
         return 0;
 
-    std::cout << fileName << "/" << funcName << ":" << line << ": ";
+    llvm::dbgs() << fileName << ": " << funcName << ": " << line << "> ";
 
     va_list args;
     va_start(args, __format);
