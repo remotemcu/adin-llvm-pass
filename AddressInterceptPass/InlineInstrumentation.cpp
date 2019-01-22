@@ -33,6 +33,15 @@ void initMemFn(Module &M, std::string NameStore, std::string NameLoad){
                                       IRB.getInt32Ty(), IRB.getInt32Ty());
 }
 
+bool isNormalAddressAlignment(Instruction *I){
+    AttributMemOperation op;
+    if(!isInterestingMemoryAccess(I, op))
+        return false;
+    const bool NormalAlignment = (op.Alignment >= (1UL << kShadowScale) || op.Alignment == 0 ||
+                                     op.Alignment >= op.TypeSize / 8);
+    return NormalAlignment;
+}
+
 bool instrumentMemAccess(Instruction *I)
 {
     ADIN_LOG(_DEBUG) << "instrumenting: " << *I;
@@ -46,16 +55,12 @@ bool instrumentMemAccess(Instruction *I)
 
     const bool isPowerOf2 = isPowerOf2_64(op.TypeSize);
     const bool typeLessThan_16s8 = (op.TypeSize / 8 <= (1UL << (kNumberOfAccessSizes - 1)));
-    const bool AlignmentNormilize = (op.Alignment >= (1UL << kShadowScale) || op.Alignment == 0 ||
-                                     op.Alignment >= op.TypeSize / 8);
 
-    const bool instrumentEnable = isPowerOf2 && typeLessThan_16s8 && AlignmentNormilize;
+    const bool instrumentEnable = isPowerOf2 && typeLessThan_16s8;
 
     if(instrumentEnable == false){
         ADIN_LOG(_ERROR) << "current instruction: " << *I;
         ADIN_LOG(_ERROR) << "current operation size: " <<  op.TypeSize << " should be power of 2";
-        ADIN_LOG(_ERROR) << "current Alignment: " <<  op.Alignment << " should be more  << " << (1UL << kShadowScale)
-                         << " or equal zero or more " <<  op.TypeSize;
         llvm_unreachable("strange fortune - check bitcode^");
         return false;
     }

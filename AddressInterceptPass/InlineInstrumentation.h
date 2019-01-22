@@ -12,6 +12,8 @@ void initMemFn(Module &M, std::string NameStore, std::string NameLoad);
 
 bool instrumentMemAccess(Instruction *I);
 
+bool isNormalAddressAlignment(Instruction *I);
+
 } //namespace
 
 

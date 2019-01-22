@@ -49,6 +49,10 @@ static cl::opt<bool> AllocaAddressSkip("adin-alloca-address-skip",
                                        cl::desc("Skip intercept address on alloca frame (Stack var)"),
                                        cl::Hidden, cl::init(true));
 
+static cl::opt<bool> CheckNormalAddressAlignment("adin-check-normal-address-aligment",
+                                       cl::desc("Checks normal alignment of address attempt"),
+                                       cl::NotHidden, cl::init(false));
+
 
 
 namespace adin{
@@ -103,6 +107,11 @@ namespace adin{
         ADIN_LOG(_DEBUG) << "Qty of instrumenting parts: " << ToInstrument.size();
 
         for (auto Inst : ToInstrument){
+            if(CheckNormalAddressAlignment.getValue() &&
+                isNormalAddressAlignment(Inst) == false){
+                ADIN_LOG(_ERROR) << "current instruction: " << Inst;
+                llvm_unreachable("operand of address must be normal align with type size");
+            }
             Changed |= instrumentMemAccess(Inst);
         }
 
