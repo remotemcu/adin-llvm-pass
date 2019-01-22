@@ -88,8 +88,7 @@ namespace adin{
                 if(isInterestingMemoryAccess(&Inst, op) == false)
                     continue;
 
-                if((AllocaAddressSkip.getValue() == false)
-                        &&
+                if(AllocaAddressSkip.getValue() &&
                         AllocaRecognizer.isProbablyAllocaOperation(op.PtrOperand)){
                     ADIN_LOG(_DEBUG) << "Inst Alloca skip: " << Inst;
                     continue;
