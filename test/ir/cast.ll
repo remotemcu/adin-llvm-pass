@@ -18,10 +18,12 @@ define void @f() #0 {
 ; CHECK-LABEL: @f(
 ; CHECK-NEXT: %1 = alloca i32, align 4
 ; CHECK-NEXT:  call void @__adin_store_(i8* inttoptr (i64 256 to i8*), i32 1, i32 32, i32 4)
-; CHECK-NEXT:  %2 = call i32 @__adin_load_(i8* inttoptr (i64 256 to i8*), i32 32, i32 4)
-; CHECK-NEXT:  store i32 %2, i32* %1, align 4
-; CHECK-NEXT:  %3 = call i32 @__adin_load_(i8* inttoptr (i64 256 to i8*), i32 32, i32 4)
-; CHECK-NEXT:  call void @__adin_store_(i8* bitcast (i32* @b to i8*), i32 %3, i32 32, i32 4)
+; CHECK-NEXT:  %2 = call i64 @__adin_load_(i8* inttoptr (i64 256 to i8*), i32 32, i32 4)
+; CHECK-NEXT:  %3 = trunc i64 %2 to i32
+; CHECK-NEXT:  store i32 %3, i32* %1, align 4
+; CHECK-NEXT:  %4 = call i64 @__adin_load_(i8* inttoptr (i64 256 to i8*), i32 32, i32 4)
+; CHECK-NEXT:  %5 = trunc i64 %4 to i32
+; CHECK-NEXT:  call void @__adin_store_(i8* bitcast (i32* @b to i8*), i32 %5, i32 32, i32 4)
   ret void
 }
 

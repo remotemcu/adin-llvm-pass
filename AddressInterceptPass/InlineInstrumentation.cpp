@@ -29,7 +29,7 @@ void initMemFn(Module &M, const std::string NameStore, const std::string NameLoa
                                       IRB.getInt32Ty(), IRB.getInt32Ty());
 
 
-    MemLoadFn = M.getOrInsertFunction(NameLoad, IRB.getInt32Ty(), IRB.getInt8PtrTy(),
+    MemLoadFn = M.getOrInsertFunction(NameLoad, IRB.getInt64Ty(), IRB.getInt8PtrTy(),
                                       IRB.getInt32Ty(), IRB.getInt32Ty());
 }
 
@@ -102,6 +102,9 @@ bool instrumentMemAccess(Instruction *I)
             typeLoadOperand = IRB.getInt16Ty();
             break;
         case 32:
+            typeLoadOperand = IRB.getInt32Ty();
+            break;
+        case 64:
             break;
         default:
             ADIN_LOG(_ERROR) << "current instruction: " << *I;

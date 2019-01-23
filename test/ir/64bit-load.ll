@@ -1,34 +1,34 @@
-; RUN: opt %s -load ../../build/AddressInterceptPass/libAddressInterceptPass.so \
-; RUN: 	-adin -S | FileCheck %s
-; ModuleID = 'global-load.c'
-source_filename = "global-load.c"
+; RUN: opt < %s -load ../../build/AddressInterceptPass/libAddressInterceptPass.so \
+; RUN:    -adin -S -adin | FileCheck %s
+; ModuleID = '../src/64bit-load.c'
+source_filename = "../src/64bit-load.c"
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-@a = global i32 0, align 4
+@a = global i64 0, align 8
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define void @f() #0 {
-  store i32 1, i32* @a, align 4
-; CHECK-LABEL: @f(
-; CHECK-NEXT: call void @__adin_store_(i8* bitcast (i32* @a to i8*), i32 1, i32 32, i32 4)
+  store i64 1, i64* @a, align 8
   ret void
+; CHECK-LABEL: @f(
+; CHECK-NEXT:  call void @__adin_store_(i8* bitcast (i64* @a to i8*), i32 1, i32 64, i32 8)
+; CHECK-NEXT:  ret void
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define i32 @v() #0 {
-  %1 = alloca i32, align 4
-  %2 = load i32, i32* @a, align 4
-  store i32 %2, i32* %1, align 4
-  %3 = load i32, i32* @a, align 4
+define i64 @v() #0 {
+  %1 = alloca i64, align 8
+  %2 = load i64, i64* @a, align 8
+  store i64 %2, i64* %1, align 8
+  %3 = load i64, i64* @a, align 8
+  ret i64 %3
 ; CHECK-LABEL: @v(
-; CHECK-NEXT: %1 = alloca i32, align 4
-; CHECK-NEXT: %2 = call i64 @__adin_load_(i8* bitcast (i32* @a to i8*), i32 32, i32 4)
-; CHECK-NEXT:  %3 = trunc i64 %2 to i32
-; CHECK-NEXT:  store i32 %3, i32* %1, align 4
-; CHECK-NEXT:  %4 = call i64 @__adin_load_(i8* bitcast (i32* @a to i8*), i32 32, i32 4)
-; CHECK-NEXT:  %5 = trunc i64 %4 to i32
-  ret i32 %3
+; CHECK-NEXT:  %1 = alloca i64, align 8
+; CHECK-NEXT:  %2 = call i64 @__adin_load_(i8* bitcast (i64* @a to i8*), i32 64, i32 8)
+; CHECK-NEXT:  store i64 %2, i64* %1, align 8
+; CHECK-NEXT:  %3 = call i64 @__adin_load_(i8* bitcast (i64* @a to i8*), i32 64, i32 8)
+; CHECK-NEXT:  ret i64 %3
 }
 
 attributes #0 = { noinline nounwind optnone uwtable "correctly-rounded-divide-sqrt-fp-math"="false" "disable-tail-calls"="false" "less-precise-fpmad"="false" "no-frame-pointer-elim"="true" "no-frame-pointer-elim-non-leaf" "no-infs-fp-math"="false" "no-jump-tables"="false" "no-nans-fp-math"="false" "no-signed-zeros-fp-math"="false" "no-trapping-math"="false" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+fxsr,+mmx,+sse,+sse2,+x87" "unsafe-fp-math"="false" "use-soft-float"="false" }
