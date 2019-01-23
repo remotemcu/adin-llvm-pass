@@ -8,7 +8,7 @@ namespace adin {
 
 using namespace llvm;
 
-void initMemFn(Module &M, std::string NameStore, std::string NameLoad);
+void initMemFn(Module &M,  const std::string NameStore,  const std::string NameLoad);
 
 bool instrumentMemAccess(Instruction *I);
 

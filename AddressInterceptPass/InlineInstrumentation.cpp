@@ -21,7 +21,7 @@ static const size_t kShadowScale = 4;
 static Value *MemStoreFn;
 static Value *MemLoadFn;
 
-void initMemFn(Module &M, std::string NameStore, std::string NameLoad){
+void initMemFn(Module &M, const std::string NameStore, const std::string NameLoad){
 
     IRBuilder<> IRB(M.getContext());
 

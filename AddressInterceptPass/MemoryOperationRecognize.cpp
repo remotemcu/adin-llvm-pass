@@ -32,6 +32,9 @@ bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op)
         op.PtrOperand = SI->getPointerOperand();
         op.PtrValue = SI->getValueOperand();
     }
+    /*
+     *  This feature will be in the future
+     */
 #if 0
       else if (AtomicRMWInst *RMW = dyn_cast<AtomicRMWInst>(I)) {
         *IsWrite = true;
@@ -68,13 +71,6 @@ bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op)
         return false;
     }
 
-#if 0
-      if (auto AI = dyn_cast_or_null<AllocaInst>(PtrOperand))
-          if(isProbablyNotAlloca(*AI) == false){
-               dbgs() << " ###########AI: " << *AI << "\n";
-                return nullptr;
-          }
-#endif
     return true;
 }
 
