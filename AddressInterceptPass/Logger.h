@@ -43,13 +43,13 @@ public:
 };
 
 
-
-} //namespace
-
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
 #define ADIN_LOG(LEVEL) Log((LEVEL), __FILENAME__, __FUNCTION__, __LINE__)
 
 #define ADIN_PRINTF(LEVEL,F__,...) Log::loggerf((LEVEL), __FILENAME__, __FUNCTION__, __LINE__, F__, __VA_ARGS__)
+
+
+} //namespace
 
 #endif // LOGGER_H

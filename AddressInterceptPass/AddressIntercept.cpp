@@ -23,6 +23,7 @@
 #include "MemoryOperationRecognize.h"
 #include "AllocaRecognize.h"
 #include "Logger.h"
+#include "Settings.h"
 
 
 using namespace llvm;
@@ -33,7 +34,7 @@ using namespace llvm;
 static cl::opt<int>  VerboseLevel(
     "adin-verbose-level",
     cl::desc("Set Level of verbose for AddressIntercept Pass"),
-    cl::Hidden, cl::init(0));
+    cl::NotHidden, cl::init(0));
 
 static cl::opt<std::string> NameCallbackStore(
     "adin-name-callback-store",
@@ -47,11 +48,15 @@ static cl::opt<std::string> NameCallbackLoad(
 
 static cl::opt<bool> AllocaAddressSkip("adin-alloca-address-skip",
                                        cl::desc("Skip intercept address on alloca frame (Stack var)"),
-                                       cl::Hidden, cl::init(true));
+                                       cl::NotHidden, cl::init(true));
 
 static cl::opt<bool> CheckNormalAddressAlignment("adin-check-normal-address-aligment",
                                        cl::desc("Checks normal alignment of address attempt"),
                                        cl::NotHidden, cl::init(false));
+
+static cl::opt<bool> SkipUnsupportedInstr("adin-skip-unsupported-instructions",
+                                                 cl::desc("if equal true - skip this unsupported instruction, else throw error"),
+                                                 cl::NotHidden, cl::init(false));
 
 
 
@@ -61,9 +66,12 @@ namespace adin{
 
       static char ID;
 
+      Settings settings;
+
     AddressInterceptPass() : FunctionPass(ID) {
         Log::setGLevel(static_cast<LevelDebug>(VerboseLevel.getValue()));
         ADIN_LOG(_DEBUG) << "Set verbose level : " << VerboseLevel;
+        settings.skipUnsuportedInstr = SkipUnsupportedInstr.getValue();
     }
 
     bool doInitialization(Module &M) override {

@@ -2,7 +2,7 @@
 #define MEMORYOPERATIONRECOGNIZE_H
 
 #include "llvm/IR/Instruction.h"
-
+#include "Settings.h"
 
 namespace adin {
 
@@ -18,7 +18,7 @@ struct AttributMemOperation {
 };
 
 
-bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op);
+bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op, const Settings);
 
 } //namespace
 

@@ -12,12 +12,15 @@
 #include "Logger.h"
 
 
+
 namespace adin {
 
 
-bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op)
+bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op, const Settings settings)
 {
     const DataLayout &DL = I->getModule()->getDataLayout();
+
+    bool unsupportedInstr = false;
 
     if (LoadInst *LI = dyn_cast<LoadInst>(I)) {
         op.IsWrite = false;
@@ -37,21 +40,25 @@ bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op)
     /*
      *  This feature will be in the future
      */
-#if 0
       else if (AtomicRMWInst *RMW = dyn_cast<AtomicRMWInst>(I)) {
-        *IsWrite = true;
-        *TypeSize = DL.getTypeStoreSizeInBits(RMW->getValOperand()->getType());
-        *Alignment = 0;
-        PtrOperand = RMW->getPointerOperand();
+        ADIN_LOG(_ERROR) << *RMW;
+        unsupportedInstr = true;
       } else if (AtomicCmpXchgInst *XCHG = dyn_cast<AtomicCmpXchgInst>(I)) {
-        *IsWrite = true;
-        *TypeSize = DL.getTypeStoreSizeInBits(XCHG->getCompareOperand()->getType());
-        *Alignment = 0;
-        PtrOperand = XCHG->getPointerOperand();
-      }
-#endif
-    else{
+        ADIN_LOG(_ERROR) << *XCHG;
+        unsupportedInstr = true;
+      } else if (auto CI = dyn_cast<CallInst>(I)) {
+          auto *F = dyn_cast<Function>(CI->getCalledValue());
+          if (F && (F->getName().startswith("llvm.masked.load.") ||
+                    F->getName().startswith("llvm.masked.store."))) {
+              ADIN_LOG(_ERROR) << F->getName();
+              unsupportedInstr = true;
+          }
+      } else{
         return false;
+    }
+
+    if(unsupportedInstr && (settings.skipUnsuportedInstr == false)){
+        llvm_unreachable("it is unsupported instruction^ - try to replace this");
     }
 
     if ( op.PtrOperand == nullptr) {
