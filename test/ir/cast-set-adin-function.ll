@@ -17,14 +17,14 @@ define void @f() #0 {
   %3 = load i32, i32* inttoptr (i64 256 to i32*), align 4
   store i32 %3, i32* @b, align 4
 ; CHECK-LABEL: @f(
-; CHECK-NEXT: %1 = alloca i32, align 4
-; CHECK-NEXT:  call void @_store_(i8* inttoptr (i64 256 to i8*), i32 1, i32 32, i32 4)
-; CHECK-NEXT:  %2 = call i64 @_load_(i8* inttoptr (i64 256 to i8*), i32 32, i32 4)
-; CHECK-NEXT:  %3 = trunc i64 %2 to i32
-; CHECK-NEXT:  store i32 %3, i32* %1, align 4
-; CHECK-NEXT:  %4 = call i64 @_load_(i8* inttoptr (i64 256 to i8*), i32 32, i32 4)
-; CHECK-NEXT:  %5 = trunc i64 %4 to i32
-; CHECK-NEXT:  call void @_store_(i8* bitcast (i32* @b to i8*), i32 %5, i32 32, i32 4)
+; CHECK: call void @_store_(i8* inttoptr (i64 256 to i8*), i64 1, i32 32, i32 4)
+; CHECK-NEXT:  %load_i32_ = call i64 @_load_(i8* inttoptr (i64 256 to i8*), i32 32, i32 4)
+; CHECK-NEXT:  %truncated_i32_ = trunc i64 %load_i32_ to i32
+; CHECK-NEXT:  store i32 %truncated_i32_, i32* %1, align 4
+; CHECK-NEXT:  %load_i32_1 = call i64 @_load_(i8* inttoptr (i64 256 to i8*), i32 32, i32 4)
+; CHECK-NEXT:  %truncated_i32_2 = trunc i64 %load_i32_1 to i32
+; CHECK-NEXT:  %cast_Val_i32__to_i64_ = zext i32 %truncated_i32_2 to i64
+; CHECK-NEXT:  call void @_store_(i8* bitcast (i32* @b to i8*), i64 %cast_Val_i32__to_i64_, i32 32, i32 4)
   ret void
 }
 

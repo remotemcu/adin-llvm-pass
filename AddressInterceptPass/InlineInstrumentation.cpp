@@ -25,7 +25,7 @@ void initMemFn(Module &M, const std::string NameStore, const std::string NameLoa
 
     IRBuilder<> IRB(M.getContext());
 
-    MemStoreFn = M.getOrInsertFunction(NameStore, IRB.getVoidTy(), IRB.getInt8PtrTy(), IRB.getInt32Ty(),
+    MemStoreFn = M.getOrInsertFunction(NameStore, IRB.getVoidTy(), IRB.getInt8PtrTy(), IRB.getInt64Ty(),
                                       IRB.getInt32Ty(), IRB.getInt32Ty());
 
 
@@ -40,6 +40,22 @@ bool isNormalAddressAlignment(Instruction *I){
     const bool NormalAlignment = (op.Alignment >= (1UL << kShadowScale) || op.Alignment == 0 ||
                                      op.Alignment >= op.TypeSize / 8);
     return NormalAlignment;
+}
+
+static std::string getFormatNameType(const Type * type){
+    std::string name;
+    raw_string_ostream os(name);
+    os << *type;
+    os.flush();
+    if(name[0] == '%'){
+        name[0] = '_';
+    }
+    if(name.at(name.size()-1) == '*'){
+        name.at(name.size()-1) = '_';
+        name.push_back('p');
+    }
+    name.push_back('_');
+    return name;
 }
 
 bool instrumentMemAccess(Instruction *I)
@@ -62,18 +78,20 @@ bool instrumentMemAccess(Instruction *I)
         ADIN_LOG(_ERROR) << "current instruction: " << *I;
         ADIN_LOG(_ERROR) << "current operation size: " <<  op.TypeSize << " should be power of 2";
         llvm_unreachable("strange fortune - check bitcode^");
-        return false;
     }
 
     IRBuilder<> IRB(I);
 
-    Value *AddrLong = IRB.CreatePointerCast(op.PtrOperand, IRB.getInt8PtrTy());
+    std::string namePtrCast = "cast_Ptr_" + getFormatNameType(op.PtrOperand->getType()) + "to_i8p_";
+
+    Value *AddrLong = IRB.CreatePointerCast(op.PtrOperand, IRB.getInt8PtrTy(), namePtrCast);
 
     std::vector<Value *> ArgsV;
     ArgsV.push_back(AddrLong);
 
     if(op.IsWrite){
-        Value *ValueLong = IRB.CreateIntCast(op.PtrValue, IRB.getInt32Ty(), true);
+        std::string nameValueCast = "cast_Val_" + getFormatNameType(op.PtrValue->getType()) + "_to_i64_";
+        Value *ValueLong = IRB.CreateIntCast(op.PtrValue, IRB.getInt64Ty(), false, nameValueCast);
         ArgsV.push_back(ValueLong);
     }
 
@@ -87,35 +105,47 @@ bool instrumentMemAccess(Instruction *I)
         IRB.CreateCall(MemStoreFn,ArgsV);
     } else {
 
-        Instruction * rep = IRB.CreateCall(MemLoadFn,ArgsV);
+        std::string nameLoad = "load_" + getFormatNameType(op.ReturnType);
 
-        Type * typeLoadOperand = rep->getType();
+        Instruction * loadInstr = IRB.CreateCall(MemLoadFn,ArgsV, nameLoad);
 
-        switch (op.TypeSize) {
-        case 1:
-            typeLoadOperand = IRB.getInt1Ty();
-            break;
-        case 8:
-            typeLoadOperand = IRB.getInt8Ty();
-            break;
-        case 16:
-            typeLoadOperand = IRB.getInt16Ty();
-            break;
-        case 32:
-            typeLoadOperand = IRB.getInt32Ty();
-            break;
-        case 64:
-            break;
-        default:
+        const Type * typeLoadOperand = loadInstr->getType();
+
+        Value * convertOperation = nullptr;
+        Type * convertType = nullptr;
+
+        if(typeLoadOperand->isIntegerTy() && op.ReturnType->isIntegerTy()){
+            char * twineName = nullptr;
+            if(op.ReturnType->isIntegerTy(1)){
+                convertType = IRB.getInt1Ty();
+            } else if(op.ReturnType->isIntegerTy(8)){
+                convertType = IRB.getInt8Ty();
+            } else if (op.ReturnType->isIntegerTy(16)) {
+                convertType = IRB.getInt16Ty();
+            } else if (op.ReturnType->isIntegerTy(32)) {
+                convertType = IRB.getInt32Ty();
+            } else if (op.ReturnType->isIntegerTy(64)) {
+                convertType = IRB.getInt64Ty();
+            } else {
+                ADIN_LOG(_ERROR) << "current instruction: " << *I;
+                ADIN_LOG(_ERROR) << "operand type of return" << *op.ReturnType;
+                llvm_unreachable("error integer type of operand^");
+            }
+
+            std::string nameTrunc = "truncated_" + getFormatNameType(op.ReturnType);
+            convertOperation = IRB.CreateTrunc(loadInstr, convertType, nameTrunc);
+        } else if(
+            typeLoadOperand->isIntegerTy() && op.ReturnType->isPointerTy()
+        ){
+            std::string nameTrunc = "converted" + getFormatNameType(op.ReturnType) + "_to_prt" ;
+            convertOperation = IRB.CreateIntToPtr(loadInstr, op.ReturnType, nameTrunc);
+        } else {
             ADIN_LOG(_ERROR) << "current instruction: " << *I;
-            ADIN_LOG(_ERROR) << "operand size: " << op.TypeSize;
-            llvm_unreachable("unknown size of operation^");
-            break;
+            llvm_unreachable("operand error - please, checks operand of instruction^");
         }
 
-        Value * trunc = IRB.CreateTrunc(rep, typeLoadOperand);
+        I->replaceAllUsesWith(convertOperation);
 
-        I->replaceAllUsesWith(trunc);
     }
 
     I->eraseFromParent();

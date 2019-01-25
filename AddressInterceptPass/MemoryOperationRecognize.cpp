@@ -9,6 +9,7 @@
 #include "llvm/IR/Intrinsics.h"
 
 #include "MemoryOperationRecognize.h"
+#include "Logger.h"
 
 
 namespace adin {
@@ -23,6 +24,7 @@ bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op)
         op.TypeSize = DL.getTypeStoreSizeInBits(LI->getType());
         op.Alignment = LI->getAlignment();
         op.PtrOperand = LI->getPointerOperand();
+        op.ReturnType = LI->getType();
     }
     else
         if (StoreInst *SI = dyn_cast<StoreInst>(I)) {

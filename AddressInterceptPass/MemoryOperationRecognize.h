@@ -11,6 +11,7 @@ using namespace llvm;
 struct AttributMemOperation {
     Value *PtrOperand = nullptr;
     Value *PtrValue = nullptr;
+    Type * ReturnType = nullptr;
     bool IsWrite = false;
     uint64_t TypeSize = 0;
     unsigned Alignment = 0;
