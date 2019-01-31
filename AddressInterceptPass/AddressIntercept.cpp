@@ -23,7 +23,7 @@
 #include "MemoryOperationRecognize.h"
 #include "AllocaRecognize.h"
 #include "Logger.h"
-#include "Settings.h"
+
 
 
 using namespace llvm;
@@ -66,12 +66,9 @@ namespace adin{
 
       static char ID;
 
-      Settings settings;
-
     AddressInterceptPass() : FunctionPass(ID) {
         Log::setGLevel(static_cast<LevelDebug>(VerboseLevel.getValue()));
         ADIN_LOG(_DEBUG) << "Set verbose level : " << VerboseLevel;
-        settings.skipUnsuportedInstr = SkipUnsupportedInstr.getValue();
     }
 
     bool doInitialization(Module &M) override {
@@ -97,8 +94,15 @@ namespace adin{
 
                 AttributMemOperation op;
 
-                if(isInterestingMemoryAccess(&Inst, op) == false)
+                const MemoryInstr_t iType = instructionMemRecognize(&Inst, op);
+
+                if(iType == _NOT_MEMORY_INSTR)
                     continue;
+
+                if(iType == _UNSUPPORTED_MEMORY_INSTR && SkipUnsupportedInstr.getValue()){
+                    ADIN_LOG(_ERROR) << " Instruction:  " << Inst;
+                    llvm_unreachable("it is unsupported instruction^ - try to replace this");
+                }
 
                 if(AllocaAddressSkip.getValue() &&
                         AllocaRecognizer.isProbablyAllocaOperation(op.PtrOperand)){
@@ -117,7 +121,7 @@ namespace adin{
         for (auto Inst : ToInstrument){
             if(CheckNormalAddressAlignment.getValue() &&
                 isNormalAddressAlignment(Inst) == false){
-                ADIN_LOG(_ERROR) << "current instruction: " << Inst;
+                ADIN_LOG(_ERROR) << "current instruction: " << *Inst;
                 llvm_unreachable("operand of address must be normal align with type size");
             }
             Changed |= instrumentMemAccess(Inst);

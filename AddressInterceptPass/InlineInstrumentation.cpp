@@ -35,7 +35,7 @@ void initMemFn(Module &M, const std::string NameStore, const std::string NameLoa
 
 bool isNormalAddressAlignment(Instruction *I){
     AttributMemOperation op;
-    if(!isInterestingMemoryAccess(I, op))
+    if(instructionMemRecognize(I, op) != _MEMORY_INSTR)
         return false;
     const bool NormalAlignment = (op.Alignment >= (1UL << kShadowScale) || op.Alignment == 0 ||
                                      op.Alignment >= op.TypeSize / 8);
@@ -63,7 +63,7 @@ bool instrumentMemAccess(Instruction *I)
     ADIN_LOG(_DEBUG) << "instrumenting: " << *I;
     AttributMemOperation op;
 
-    if(!isInterestingMemoryAccess(I, op))
+    if(instructionMemRecognize(I, op) != _MEMORY_INSTR)
         return false;
 
     if (!op.PtrOperand)

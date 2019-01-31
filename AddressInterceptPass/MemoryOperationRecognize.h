@@ -2,7 +2,7 @@
 #define MEMORYOPERATIONRECOGNIZE_H
 
 #include "llvm/IR/Instruction.h"
-#include "Settings.h"
+
 
 namespace adin {
 
@@ -17,8 +17,14 @@ struct AttributMemOperation {
     unsigned Alignment = 0;
 };
 
+enum MemoryInstr_t {
+    _NOT_MEMORY_INSTR = 0,
+    _MEMORY_INSTR,
+    _UNSUPPORTED_MEMORY_INSTR
+};
 
-bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op, const Settings);
+
+MemoryInstr_t instructionMemRecognize(Instruction *I, AttributMemOperation &op);
 
 } //namespace
 

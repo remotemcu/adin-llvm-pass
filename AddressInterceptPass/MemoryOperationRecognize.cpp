@@ -16,7 +16,7 @@
 namespace adin {
 
 
-bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op, const Settings settings)
+MemoryInstr_t instructionMemRecognize(Instruction *I, AttributMemOperation &op)
 {
     const DataLayout &DL = I->getModule()->getDataLayout();
 
@@ -54,22 +54,22 @@ bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op, const S
               unsupportedInstr = true;
           }
       } else{
-        return false;
+        return _NOT_MEMORY_INSTR;
     }
 
-    if(unsupportedInstr && (settings.skipUnsuportedInstr == false)){
-        llvm_unreachable("it is unsupported instruction^ - try to replace this");
+    if(unsupportedInstr){
+        return _UNSUPPORTED_MEMORY_INSTR;
     }
 
     if ( op.PtrOperand == nullptr) {
-        return false;
+        return _NOT_MEMORY_INSTR;
     }
 
     // Do not instrument acesses from different address spaces; we cannot deal
     // with them.
     Type *PtrTy = cast<PointerType>(op.PtrOperand->getType()->getScalarType());
     if (PtrTy->getPointerAddressSpace() != 0){
-        return false;
+        return _NOT_MEMORY_INSTR;
     }
 
     // Ignore swifterror addresses.
@@ -77,10 +77,10 @@ bool isInterestingMemoryAccess(Instruction *I, AttributMemOperation &op, const S
     // selection. As such they cannot have regular uses like an instrumentation
     // function and it makes no sense to track them as memory.
     if (op.PtrOperand->isSwiftError()){
-        return false;
+        return _NOT_MEMORY_INSTR;
     }
 
-    return true;
+    return _MEMORY_INSTR;
 }
 
 
