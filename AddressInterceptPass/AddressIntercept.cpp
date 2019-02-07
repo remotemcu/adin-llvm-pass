@@ -62,11 +62,11 @@ static cl::opt<bool> SkipUnsupportedInstr("adin-skip-unsupported-instructions",
 
 namespace adin{
 
-  struct AddressInterceptPass : public FunctionPass {
+  struct AddressInterceptor : public FunctionPass {
 
       static char ID;
 
-    AddressInterceptPass() : FunctionPass(ID) {
+    AddressInterceptor() : FunctionPass(ID) {
         Log::setGLevel(static_cast<LevelDebug>(VerboseLevel.getValue()));
         ADIN_LOG(__DEBUG) << "Set verbose level : " << VerboseLevel;
     }
@@ -135,9 +135,9 @@ namespace adin{
 
 using namespace adin;
 
-char AddressInterceptPass::ID = 0;
+char AddressInterceptor::ID = 0;
 
-static RegisterPass<AddressInterceptPass> X("adin", "Hello World Pass",
+static RegisterPass<AddressInterceptor> X("adin", "Hello World Pass",
                              false /* Only looks at CFG */,
                              false /* Analysis Pass */);
 
@@ -145,7 +145,7 @@ static RegisterPass<AddressInterceptPass> X("adin", "Hello World Pass",
 
 static void registerAddressInterceptPass(const PassManagerBuilder &,
                          legacy::PassManagerBase &PM) {
-  PM.add(new AddressInterceptPass());
+  PM.add(new AddressInterceptor());
 }
 static RegisterStandardPasses
   RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible,
