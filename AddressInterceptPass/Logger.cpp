@@ -7,7 +7,7 @@
 
 namespace adin {
 
-LevelDebug Log::gLevel = _ERROR;
+LevelDebug Log::gLevel = __ERROR;
 
 
 void setVerboseLevel(LevelDebug level){

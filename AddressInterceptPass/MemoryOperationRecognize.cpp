@@ -41,16 +41,16 @@ MemoryInstr_t instructionMemRecognize(Instruction *I, AttributMemOperation &op)
      *  This feature will be in the future
      */
       else if (AtomicRMWInst *RMW = dyn_cast<AtomicRMWInst>(I)) {
-        ADIN_LOG(_ERROR) << *RMW;
+        ADIN_LOG(__ERROR) << *RMW;
         unsupportedInstr = true;
       } else if (AtomicCmpXchgInst *XCHG = dyn_cast<AtomicCmpXchgInst>(I)) {
-        ADIN_LOG(_ERROR) << *XCHG;
+        ADIN_LOG(__ERROR) << *XCHG;
         unsupportedInstr = true;
       } else if (auto CI = dyn_cast<CallInst>(I)) {
           auto *F = dyn_cast<Function>(CI->getCalledValue());
           if (F && (F->getName().startswith("llvm.masked.load.") ||
                     F->getName().startswith("llvm.masked.store."))) {
-              ADIN_LOG(_ERROR) << F->getName();
+              ADIN_LOG(__ERROR) << F->getName();
               unsupportedInstr = true;
           }
       } else{

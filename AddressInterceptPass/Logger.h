@@ -9,7 +9,7 @@
 
 namespace adin {
 
-enum LevelDebug { _ERROR = 0, _WARNING, _INFO, _DEBUG, _ALL_LOG };
+enum LevelDebug { __ERROR = 0, __WARNING, __INFO, __DEBUG, __ALL_LOG };
 
 class Log {
     static LevelDebug gLevel;

@@ -29,7 +29,7 @@ void AllocaRecognize::markEscapedLocalAllocas(Function &F) {
     // to it as uninteresting. This assumes we haven't started processing allocas
     // yet. This check is done up front because iterating the use list in
     // isInterestingAlloca would be algorithmically slower.
-    ADIN_LOG(_DEBUG) << "ProcessedAllocas.size() = " << ProcessedAllocas.size();
+    ADIN_LOG(__DEBUG) << "ProcessedAllocas.size() = " << ProcessedAllocas.size();
     assert(ProcessedAllocas.empty() && "must process localescape before allocas");
 
     // Try to get the declaration of llvm.localescape. If it's not in the module,

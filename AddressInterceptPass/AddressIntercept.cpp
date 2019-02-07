@@ -68,12 +68,12 @@ namespace adin{
 
     AddressInterceptPass() : FunctionPass(ID) {
         Log::setGLevel(static_cast<LevelDebug>(VerboseLevel.getValue()));
-        ADIN_LOG(_DEBUG) << "Set verbose level : " << VerboseLevel;
+        ADIN_LOG(__DEBUG) << "Set verbose level : " << VerboseLevel;
     }
 
     bool doInitialization(Module &M) override {
 
-        ADIN_LOG(_DEBUG) << "Init module" << M.getName();
+        ADIN_LOG(__DEBUG) << "Init module" << M.getName();
 
         initMemFn(M, NameCallbackStore, NameCallbackLoad);
 
@@ -82,7 +82,7 @@ namespace adin{
 
     virtual bool runOnFunction(Function &F) {
 
-        ADIN_LOG(_DEBUG) << "Examine function: " << F.getName();
+        ADIN_LOG(__DEBUG) << "Examine function: " << F.getName();
 
         AllocaRecognize AllocaRecognizer(F);
 
@@ -100,13 +100,13 @@ namespace adin{
                     continue;
 
                 if(iType == _UNSUPPORTED_MEMORY_INSTR && SkipUnsupportedInstr.getValue()){
-                    ADIN_LOG(_ERROR) << " Instruction:  " << Inst;
+                    ADIN_LOG(__ERROR) << " Instruction:  " << Inst;
                     llvm_unreachable("it is unsupported instruction^ - try to replace this");
                 }
 
                 if(AllocaAddressSkip.getValue() &&
                         AllocaRecognizer.isProbablyAllocaOperation(op.PtrOperand)){
-                    ADIN_LOG(_DEBUG) << "Inst Alloca skip: " << Inst;
+                    ADIN_LOG(__DEBUG) << "Inst Alloca skip: " << Inst;
                     continue;
                 }
 
@@ -116,12 +116,12 @@ namespace adin{
             }
         }
 
-        ADIN_LOG(_DEBUG) << "Qty of instrumenting parts: " << ToInstrument.size();
+        ADIN_LOG(__DEBUG) << "Qty of instrumenting parts: " << ToInstrument.size();
 
         for (auto Inst : ToInstrument){
             if(CheckNormalAddressAlignment.getValue() &&
                 isNormalAddressAlignment(Inst) == false){
-                ADIN_LOG(_ERROR) << "current instruction: " << *Inst;
+                ADIN_LOG(__ERROR) << "current instruction: " << *Inst;
                 llvm_unreachable("operand of address must be normal align with type size");
             }
             Changed |= instrumentMemAccess(Inst);

@@ -60,7 +60,7 @@ static std::string getFormatNameType(const Type * type){
 
 bool instrumentMemAccess(Instruction *I)
 {
-    ADIN_LOG(_DEBUG) << "instrumenting: " << *I;
+    ADIN_LOG(__DEBUG) << "instrumenting: " << *I;
     AttributMemOperation op;
 
     if(instructionMemRecognize(I, op) != _MEMORY_INSTR)
@@ -75,8 +75,8 @@ bool instrumentMemAccess(Instruction *I)
     const bool instrumentEnable = isPowerOf2 && typeLessThan_16s8;
 
     if(instrumentEnable == false){
-        ADIN_LOG(_ERROR) << "current instruction: " << *I;
-        ADIN_LOG(_ERROR) << "current operation size: " <<  op.TypeSize << " should be power of 2";
+        ADIN_LOG(__ERROR) << "current instruction: " << *I;
+        ADIN_LOG(__ERROR) << "current operation size: " <<  op.TypeSize << " should be power of 2";
         llvm_unreachable("strange fortune - check bitcode^");
     }
 
@@ -127,8 +127,8 @@ bool instrumentMemAccess(Instruction *I)
             } else if (op.ReturnType->isIntegerTy(64)) {
                 convertType = IRB.getInt64Ty();
             } else {
-                ADIN_LOG(_ERROR) << "current instruction: " << *I;
-                ADIN_LOG(_ERROR) << "operand type of return" << *op.ReturnType;
+                ADIN_LOG(__ERROR) << "current instruction: " << *I;
+                ADIN_LOG(__ERROR) << "operand type of return" << *op.ReturnType;
                 llvm_unreachable("error integer type of operand^");
             }
 
@@ -140,7 +140,7 @@ bool instrumentMemAccess(Instruction *I)
             std::string nameTrunc = "converted" + getFormatNameType(op.ReturnType) + "_to_prt" ;
             convertOperation = IRB.CreateIntToPtr(loadInstr, op.ReturnType, nameTrunc);
         } else {
-            ADIN_LOG(_ERROR) << "current instruction: " << *I;
+            ADIN_LOG(__ERROR) << "current instruction: " << *I;
             llvm_unreachable("operand error - please, checks operand of instruction^");
         }
 
