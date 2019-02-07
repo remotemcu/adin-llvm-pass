@@ -39,12 +39,12 @@ static cl::opt<int>  VerboseLevel(
 static cl::opt<std::string> NameCallbackStore(
     "adin-name-callback-store",
     cl::desc("Set name callback of store operation. Default __adin_store_"),
-    cl::Hidden, cl::init("__adin_store_"));
+    cl::NotHidden, cl::init("__adin_store_"));
 
 static cl::opt<std::string> NameCallbackLoad(
     "adin-name-callback-load",
     cl::desc("Set name callback of load operation. Default __adin_load_"),
-    cl::Hidden, cl::init("__adin_load_"));
+    cl::NotHidden, cl::init("__adin_load_"));
 
 static cl::opt<bool> AllocaAddressSkip("adin-alloca-address-skip",
                                        cl::desc("Skip intercept address on alloca frame (Stack var)"),
