@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.4)
 
-message("YOUR_LLVM_PATH PATH : $ENV{YOUR_LLVM_PATH} ##################################")
+message("################################## YOUR_LLVM_PATH PATH : $ENV{YOUR_LLVM_PATH} ##################################")
 
 # we need YOUR_LLVM_PATH in order not automatically set LLVM_DIR
 if(NOT DEFINED ENV{YOUR_LLVM_PATH})
@@ -14,4 +14,4 @@ else ()
     link_directories(${LLVM_LIBRARY_DIRS})
 endif()
 
-add_subdirectory(AddressInterceptPass)  # Use your pass name here.
+add_subdirectory(src)  # Use your pass name here.

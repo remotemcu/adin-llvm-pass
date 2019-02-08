@@ -28,7 +28,7 @@
 
 using namespace llvm;
 
-#define DEBUG_TYPE "AddressInterceptPass"
+#define DEBUG_TYPE "AddressInterceptor"
 
 
 static cl::opt<int>  VerboseLevel(
