@@ -1,6 +1,6 @@
 if(NOT DEFINED ENV{YOUR_LLVM_PATH})
 
-    add_llvm_library( LLVMAddressInterceptor
+    add_llvm_library( LLVMAddressInterception
         # List your source files here.
         AddressIntercept.cpp
         AllocaRecognize.cpp

@@ -145,14 +145,30 @@ static RegisterPass<AddressInterceptor> X("adin", "Hello World Pass",
 
 // Automatically enable the pass.
 
-static void registerAddressInterceptPass(const PassManagerBuilder &,
+static void registerAddressInterceptor(const PassManagerBuilder &,
                          legacy::PassManagerBase &PM) {
   PM.add(new AddressInterceptor());
 }
 static RegisterStandardPasses
   RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible,
-                 registerAddressInterceptPass);
+                 registerAddressInterceptor);
 
 #else
+
+INITIALIZE_PASS_BEGIN(AddressInterceptor, "adin",
+                      "adin: detect memory bugs using tagged addressing.", false, false)
+INITIALIZE_PASS_END(AddressInterceptor, "adin",
+                    "adin: detect memory bugs using tagged addressing.", false, false)
+
+
+FunctionPass *llvm::createAddressInterceptor() {
+    return new AddressInterceptor();
+}
+
+/// initializeVectorizationPasses - Initialize all passes linked into the
+/// Vectorization library.
+void llvm::initializeAddressInterception(PassRegistry &Registry) {
+    initializeAddressInterceptorPass(Registry);
+}
 
 #endif
