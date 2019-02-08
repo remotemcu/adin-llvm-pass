@@ -1,25 +1,48 @@
-add_library(AddressInterceptPass MODULE
-    # List your source files here.
-    AddressIntercept.cpp
-    AllocaRecognize
-    MemoryOperationRecognize
-    InlineInstrumentation
-    Logger
-)
+if(NOT DEFINED ENV{YOUR_LLVM_PATH})
 
-# Use C++11 to compile your pass (i.e., supply -std=c++11).
-target_compile_features(AddressInterceptPass PRIVATE cxx_range_for cxx_auto_type)
+    add_llvm_library( LLVMAddressInterceptor
+        # List your source files here.
+        AddressIntercept.cpp
+        AllocaRecognize.cpp
+        MemoryOperationRecognize.cpp
+        InlineInstrumentation.cpp
+        Logger.cpp
 
-# LLVM is (typically) built with no C++ RTTI. We need to match that;
-# otherwise, we'll get linker errors about missing RTTI data.
-set_target_properties(AddressInterceptPass PROPERTIES
-    COMPILE_FLAGS "-fno-rtti"
-)
+      ADDITIONAL_HEADER_DIRS
+      ${LLVM_MAIN_INCLUDE_DIR}/llvm/Transforms
 
-# Get proper shared-library behavior (where symbols are not necessarily
-# resolved when the shared library is linked) on OS X.
-if(APPLE)
-    set_target_properties(AddressInterceptPass PROPERTIES
-        LINK_FLAGS "-undefined dynamic_lookup"
+      DEPENDS
+      intrinsics_gen
+      )
+
+else ()
+
+    add_library(AddressInterceptPass MODULE
+        # List your source files here.
+        AddressIntercept.cpp
+        AllocaRecognize
+        MemoryOperationRecognize
+        InlineInstrumentation
+        Logger
     )
-endif(APPLE)
+
+    add_definitions(-DADIN_LOAD_MODULE)
+
+    # Use C++11 to compile your pass (i.e., supply -std=c++11).
+    target_compile_features(AddressInterceptPass PRIVATE cxx_range_for cxx_auto_type)
+
+    # LLVM is (typically) built with no C++ RTTI. We need to match that;
+    # otherwise, we'll get linker errors about missing RTTI data.
+    set_target_properties(AddressInterceptPass PROPERTIES
+        COMPILE_FLAGS "-fno-rtti"
+    )
+
+    # Get proper shared-library behavior (where symbols are not necessarily
+    # resolved when the shared library is linked) on OS X.
+    if(APPLE)
+        set_target_properties(AddressInterceptPass PROPERTIES
+            LINK_FLAGS "-undefined dynamic_lookup"
+        )
+    endif(APPLE)
+
+endif()

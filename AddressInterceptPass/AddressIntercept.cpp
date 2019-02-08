@@ -137,6 +137,8 @@ using namespace adin;
 
 char AddressInterceptor::ID = 0;
 
+#ifdef ADIN_LOAD_MODULE
+
 static RegisterPass<AddressInterceptor> X("adin", "Hello World Pass",
                              false /* Only looks at CFG */,
                              false /* Analysis Pass */);
@@ -151,3 +153,6 @@ static RegisterStandardPasses
   RegisterMyPass(PassManagerBuilder::EP_EarlyAsPossible,
                  registerAddressInterceptPass);
 
+#else
+
+#endif
