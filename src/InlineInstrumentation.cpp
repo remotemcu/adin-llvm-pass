@@ -31,12 +31,12 @@ void initMemFn(Module &M, const std::string NameStore, const std::string NameLoa
     IRBuilder<> IRB(M.getContext());
 
     MemStoreFn = cast<Function>(M.getOrInsertFunction(NameStore, IRB.getVoidTy(), IRB.getInt8PtrTy(), IRB.getInt64Ty(),
-                                                      IRB.getInt32Ty(), IRB.getInt32Ty()).getCallee()
+                                                      IRB.getInt32Ty(), IRB.getInt32Ty())
                                 );
 
 
     MemLoadFn = cast<Function>(M.getOrInsertFunction(NameLoad, IRB.getInt64Ty(), IRB.getInt8PtrTy(),
-                                      IRB.getInt32Ty(), IRB.getInt32Ty()).getCallee()
+                                      IRB.getInt32Ty(), IRB.getInt32Ty())
                                );
 }
 
