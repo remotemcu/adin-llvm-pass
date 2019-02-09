@@ -7,6 +7,11 @@
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/Intrinsics.h"
 
+#include "llvm/Transforms/Utils/ModuleUtils.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Module.h"
+
 #include "InlineInstrumentation.h"
 #include "MemoryOperationRecognize.h"
 #include "Logger.h"
@@ -18,19 +23,21 @@ static const size_t kNumberOfAccessSizes = 5;
 // 1 << 4 ... 16
 static const size_t kShadowScale = 4;
 
-static Value *MemStoreFn;
-static Value *MemLoadFn;
+static Function *MemStoreFn;
+static Function *MemLoadFn;
 
 void initMemFn(Module &M, const std::string NameStore, const std::string NameLoad){
 
     IRBuilder<> IRB(M.getContext());
 
-    MemStoreFn = M.getOrInsertFunction(NameStore, IRB.getVoidTy(), IRB.getInt8PtrTy(), IRB.getInt64Ty(),
-                                      IRB.getInt32Ty(), IRB.getInt32Ty());
+    MemStoreFn = cast<Function>(M.getOrInsertFunction(NameStore, IRB.getVoidTy(), IRB.getInt8PtrTy(), IRB.getInt64Ty(),
+                                                      IRB.getInt32Ty(), IRB.getInt32Ty()).getCallee()
+                                );
 
 
-    MemLoadFn = M.getOrInsertFunction(NameLoad, IRB.getInt64Ty(), IRB.getInt8PtrTy(),
-                                      IRB.getInt32Ty(), IRB.getInt32Ty());
+    MemLoadFn = cast<Function>(M.getOrInsertFunction(NameLoad, IRB.getInt64Ty(), IRB.getInt8PtrTy(),
+                                      IRB.getInt32Ty(), IRB.getInt32Ty()).getCallee()
+                               );
 }
 
 bool isNormalAddressAlignment(Instruction *I){
@@ -115,7 +122,6 @@ bool instrumentMemAccess(Instruction *I)
         Type * convertType = nullptr;
 
         if(typeLoadOperand->isIntegerTy() && op.ReturnType->isIntegerTy()){
-            char * twineName = nullptr;
             if(op.ReturnType->isIntegerTy(1)){
                 convertType = IRB.getInt1Ty();
             } else if(op.ReturnType->isIntegerTy(8)){
@@ -150,6 +156,7 @@ bool instrumentMemAccess(Instruction *I)
 
     I->eraseFromParent();
 
+    return true;
 }
 
 
