@@ -19,6 +19,8 @@
 #include "llvm/Transforms/Utils/PromoteMemToReg.h"
 #include <cassert>
 
+#include "llvm/Transforms/Instrumentation.h"
+
 #include "InlineInstrumentation.h"
 #include "MemoryOperationRecognize.h"
 #include "AllocaRecognize.h"
@@ -156,12 +158,12 @@ static RegisterStandardPasses
 #else
 
 INITIALIZE_PASS_BEGIN(AddressInterceptor, "adin",
-                      "adin: detect memory bugs using tagged addressing.", false, false)
+                      "adin: intercept memory access.", false, false)
 INITIALIZE_PASS_END(AddressInterceptor, "adin",
-                    "adin: detect memory bugs using tagged addressing.", false, false)
+                    "adin: intercept memory access.", false, false)
 
 
-FunctionPass *llvm::createAddressInterceptor() {
+FunctionPass *llvm::createAddressInterceptorPass() {
     return new AddressInterceptor();
 }
 
