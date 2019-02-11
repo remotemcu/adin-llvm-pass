@@ -1,4 +1,4 @@
-; RUN: opt < %s -load ../../build/AddressInterceptPass/libAddressInterceptPass.so \
+; RUN: opt < %s -load ../../build/src/libAddressInterceptorPassModule.so \
 ; RUN:    -adin -S | FileCheck %s
 ; ModuleID = '../src/64bit-load.c'
 source_filename = "../src/64bit-load.c"

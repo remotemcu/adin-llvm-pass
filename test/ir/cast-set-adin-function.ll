@@ -1,4 +1,4 @@
-; RUN: opt %s -load ../../build/AddressInterceptPass/libAddressInterceptPass.so \
+; RUN: opt %s -load ../../build/src/libAddressInterceptorPassModule.so \
 ; RUN: 	-adin-name-callback-store=_store_ -adin-name-callback-load=_load_ \
 ; RUN: 	-adin -S | FileCheck %s
 ; ModuleID = 'pointer.c'

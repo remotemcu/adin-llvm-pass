@@ -1,4 +1,4 @@
-; RUN: opt < %s -load ../../build/AddressInterceptPass/libAddressInterceptPass.so \
+; RUN: opt < %s -load ../../build/src/libAddressInterceptorPassModule.so \
 ; RUN:    -adin -S -adin | FileCheck %s
 
 ; ModuleID = 'alloca.c'

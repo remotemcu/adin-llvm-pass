@@ -1,4 +1,4 @@
-; RUN: opt %s -load ../../build/AddressInterceptPass/libAddressInterceptPass.so \
+; RUN: opt %s -load ../../build/src/libAddressInterceptorPassModule.so \
 ; RUN: 	-adin -S | FileCheck %s
 ; ModuleID = 'global-load.c'
 source_filename = "global-load.c"
