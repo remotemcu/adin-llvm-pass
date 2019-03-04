@@ -1,5 +1,5 @@
 ; RUN: opt %s -load ../../build/src/libAddressInterceptorPassModule.so \
-; RUN: 	-adin -S | FileCheck %s
+; RUN: 	-adin -S -adin-simple-global-skip=false | FileCheck %s
 ; ModuleID = 'pointer.c'
 source_filename = "pointer.c"
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"

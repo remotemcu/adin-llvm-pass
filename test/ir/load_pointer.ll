@@ -1,4 +1,4 @@
-; RUN: opt < %s -load ../../build/src/libAddressInterceptorPassModule.so -adin -S \
+; RUN: opt < %s -load ../../build/src/libAddressInterceptorPassModule.so -adin -adin-simple-global-skip=false -S \
 ; RUN:  | FileCheck %s
 ; ModuleID = 'src/load_pointer.c'
 source_filename = "src/load_pointer.c"

@@ -52,6 +52,10 @@ static cl::opt<bool> AllocaAddressSkip("adin-alloca-address-skip",
                                        cl::desc("Skip intercept address on alloca frame (Stack var)"),
                                        cl::NotHidden, cl::init(true));
 
+static cl::opt<bool> SimpleGlobalVarSkip("adin-simple-global-skip",
+                                       cl::desc("Skip intercept address of SIMPLE global var"),
+                                       cl::NotHidden, cl::init(true));
+
 static cl::opt<bool> CheckNormalAddressAlignment("adin-check-normal-address-aligment",
                                        cl::desc("Checks normal alignment of address attempt"),
                                        cl::NotHidden, cl::init(false));
@@ -110,6 +114,15 @@ namespace adin{
                         AllocaRecognizer.isProbablyAllocaOperation(op.PtrOperand)){
                     ADIN_LOG(__DEBUG) << "Inst Alloca skip: " << Inst;
                     continue;
+                }
+
+                if(SimpleGlobalVarSkip.getValue()){
+                    const GlobalValue* GV = dyn_cast<GlobalValue>(op.PtrOperand);
+                    if(GV != nullptr){
+                        ADIN_LOG(__DEBUG) << "Simple Global Variable: " << *op.PtrOperand;
+                        ADIN_LOG(__DEBUG) << "Skip instuction: " << Inst;
+                        continue;
+                    }
                 }
 
                 if (op.PtrOperand || isa<MemIntrinsic>(Inst)){
