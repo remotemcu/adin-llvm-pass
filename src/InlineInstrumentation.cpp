@@ -98,7 +98,12 @@ bool instrumentMemAccess(Instruction *I)
 
     if(op.IsWrite){
         std::string nameValueCast = "cast_Val_" + getFormatNameType(op.PtrValue->getType()) + "_to_i64_";
-        Value *ValueLong = IRB.CreateIntCast(op.PtrValue, IRB.getInt64Ty(), false, nameValueCast);
+        Value *ValueLong = nullptr;
+        if(op.PtrValue->getType()->isPointerTy()){
+            ValueLong = IRB.CreatePtrToInt(op.PtrValue, IRB.getInt64Ty(), nameValueCast);
+        } else {
+            ValueLong = IRB.CreateIntCast(op.PtrValue, IRB.getInt64Ty(), false, nameValueCast);
+        }
         ArgsV.push_back(ValueLong);
     }
 
