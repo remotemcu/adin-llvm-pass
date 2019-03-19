@@ -25,8 +25,13 @@ static const size_t kShadowScale = 4;
 
 static Function *MemStoreFn;
 static Function *MemLoadFn;
+static Function *MemMemmoveFn;
+static Function *MemMemcpyFn;
+static Function *MemMemsetFn;
 
-void initMemFn(Module &M, const std::string NameStore, const std::string NameLoad){
+void initMemFn(Module &M, const std::string NameStore,  const std::string NameLoad,
+               const std::string NameMemmove,  const std::string NameMemcpy,
+               const std::string NameMemset){
 
     IRBuilder<> IRB(M.getContext());
 
@@ -34,10 +39,45 @@ void initMemFn(Module &M, const std::string NameStore, const std::string NameLoa
                                                       IRB.getInt32Ty(), IRB.getInt32Ty())
                                 );
 
-
     MemLoadFn = cast<Function>(M.getOrInsertFunction(NameLoad, IRB.getInt64Ty(), IRB.getInt8PtrTy(),
                                       IRB.getInt32Ty(), IRB.getInt32Ty())
                                );
+
+    MemMemmoveFn = checkSanitizerInterfaceFunction( M.getOrInsertFunction(NameMemmove,
+                                              IRB.getVoidTy(), IRB.getInt8PtrTy(),
+                                              IRB.getInt8PtrTy(), IRB.getInt32Ty()
+                                                                             ));
+
+    MemMemcpyFn = checkSanitizerInterfaceFunction((M.getOrInsertFunction(NameMemcpy,
+                                              IRB.getVoidTy(), IRB.getInt8PtrTy(),
+                                                     IRB.getInt8PtrTy(), IRB.getInt32Ty())
+                                                       ));
+
+    MemMemsetFn = checkSanitizerInterfaceFunction((M.getOrInsertFunction(NameMemset,
+                                              IRB.getVoidTy(), IRB.getInt8PtrTy(),
+                                              IRB.getInt8Ty(), IRB.getInt32Ty())
+                                                       ));
+}
+
+bool instrumentMemIntrinsic(MemIntrinsic *MI) {
+    IRBuilder<> IRB(MI);
+    if (isa<MemTransferInst>(MI)) {
+        IRB.CreateCall(
+            isa<MemMoveInst>(MI) ? MemMemmoveFn : MemMemcpyFn,
+            {IRB.CreatePointerCast(MI->getOperand(0), IRB.getInt8PtrTy(), "dest_i8ptr_"),
+             IRB.CreatePointerCast(MI->getOperand(1), IRB.getInt8PtrTy(), "src_i8ptr_"),
+             IRB.CreateIntCast(MI->getOperand(2), IRB.getInt32Ty(), false, "size_int32_")});
+    } else if (isa<MemSetInst>(MI)) {
+        IRB.CreateCall(
+            MemMemsetFn,
+            {IRB.CreatePointerCast(MI->getOperand(0), IRB.getInt8PtrTy(), "mem_set_dest_i8ptr_"),
+             IRB.CreateIntCast(MI->getOperand(1), IRB.getInt8Ty(), false, "mem_set_value_i8_"),
+             IRB.CreateIntCast(MI->getOperand(2), IRB.getInt32Ty(), false, "size_int32_")});
+    } else {
+        return false;
+    }
+    MI->eraseFromParent();
+    return true;
 }
 
 bool isNormalAddressAlignment(Instruction *I){
@@ -151,6 +191,7 @@ bool instrumentMemAccess(Instruction *I)
             std::string nameTrunc = "converted" + getFormatNameType(op.ReturnType) + "_to_prt" ;
             convertOperation = IRB.CreateIntToPtr(loadInstr, op.ReturnType, nameTrunc);
         } else {
+            // float blyat!!!!
             ADIN_LOG(__ERROR) << "current instruction: " << *I;
             llvm_unreachable("operand error - please, checks operand of instruction^");
         }
@@ -164,5 +205,60 @@ bool instrumentMemAccess(Instruction *I)
     return true;
 }
 
+#if 0
+float BSP_CurrentGet( void )
+{
+   BCP_Packet pkt;
+   float      *pcurrent;
+
+   pkt.type          = BSP_BCP_CURRENT_REQ;
+   pkt.payloadLength = 0;
+
+   /* Send Request/Get reply */
+   BSP_BccPacketSend( &pkt );
+   BSP_BccPacketReceive( &pkt );
+
+   /* Process reply */
+   pcurrent = (float *)pkt.data;
+   if ( pkt.type != BSP_BCP_CURRENT_REPLY )
+   {
+      *pcurrent = 0.0f;
+   }
+
+   return *pcurrent;
+}
+
+/**************************************************************************//**
+ * @brief Request AEM (Advanced Energy Monitoring) voltage from board controller.
+ *
+ * @note Assumes that BSP_Init() has been called with @ref BSP_INIT_BCC
+ *       bitmask.
+ *
+ * @return
+ *   The voltage. Returns 0.0 on board controller communication
+ *   error.
+ *****************************************************************************/
+float BSP_VoltageGet( void )
+{
+   BCP_Packet pkt;
+   float      *pvoltage;
+
+   pkt.type          = BSP_BCP_VOLTAGE_REQ;
+   pkt.payloadLength = 0;
+
+   /* Send Request/Get reply */
+   BSP_BccPacketSend( &pkt );
+   BSP_BccPacketReceive( &pkt );
+
+   /* Process reply */
+   pvoltage = (float *)pkt.data;
+   if ( pkt.type != BSP_BCP_VOLTAGE_REPLY )
+   {
+      *pvoltage = 0.0f;
+   }
+
+   return *pvoltage;
+}
+#endif
 
 } //namespace

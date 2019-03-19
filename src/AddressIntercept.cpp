@@ -48,6 +48,22 @@ static cl::opt<std::string> NameCallbackLoad(
     cl::desc("Set name callback of load operation. Default __adin_load_"),
     cl::NotHidden, cl::init("__adin_load_"));
 
+static cl::opt<std::string> NameCallbackMemmove(
+    "adin-name-callback-memmove",
+    cl::desc("Set name callback of memmove operation. Default __adin_memmove_"),
+    cl::NotHidden, cl::init("__adin_memmove_"));
+
+static cl::opt<std::string> NameCallbackMemcpy(
+    "adin-name-callback-memcpy",
+    cl::desc("Set name callback of memcpy operation. Default __adin_memcpy_"),
+    cl::NotHidden, cl::init("__adin_memcpy_"));
+
+static cl::opt<std::string> NameCallbackMemset(
+    "adin-name-callback-memset",
+    cl::desc("Set name callback of memset operation. Default __adin_memset_"),
+    cl::NotHidden, cl::init("__adin_memset_"));
+
+
 static cl::opt<bool> AllocaAddressSkip("adin-alloca-address-skip",
                                        cl::desc("Skip intercept address on alloca frame (Stack var)"),
                                        cl::NotHidden, cl::init(true));
@@ -63,6 +79,10 @@ static cl::opt<bool> CheckNormalAddressAlignment("adin-check-normal-address-alig
 static cl::opt<bool> SkipUnsupportedInstr("adin-skip-unsupported-instructions",
                                                  cl::desc("if equal true - skip this unsupported instruction, else throw error"),
                                                  cl::NotHidden, cl::init(false));
+
+static cl::opt<bool> MemFunIntrinsic("adin-mem-function-instructions",
+                                          cl::desc("if equal true - intercept memmove/memcpy/memset function, else skip"),
+                                          cl::NotHidden, cl::init(true));
 
 
 
@@ -81,7 +101,9 @@ namespace adin{
 
         ADIN_LOG(__DEBUG) << "Init module" << M.getName();
 
-        initMemFn(M, NameCallbackStore, NameCallbackLoad);
+        initMemFn(M, NameCallbackStore, NameCallbackLoad,
+                  NameCallbackMemmove, NameCallbackMemcpy,
+                  NameCallbackMemset);
 
         return false;
     }
@@ -94,6 +116,7 @@ namespace adin{
 
         bool Changed = false;
         SmallVector<Instruction*, 16> ToInstrument;
+        SmallVector<MemIntrinsic*, 16> ToMemFunInstrument;
 
         for (auto &BB : F) {
             for (auto &Inst : BB) {
@@ -101,6 +124,11 @@ namespace adin{
                 AttributMemOperation op;
 
                 const MemoryInstr_t iType = instructionMemRecognize(&Inst, op);
+
+                if (isa<MemIntrinsic>(Inst) && MemFunIntrinsic.getValue()){
+                    ToMemFunInstrument.push_back(cast<MemIntrinsic>(&Inst));
+                    continue;
+                }
 
                 if(iType == _NOT_MEMORY_INSTR)
                     continue;
@@ -125,7 +153,7 @@ namespace adin{
                     }
                 }
 
-                if (op.PtrOperand || isa<MemIntrinsic>(Inst)){
+                if (op.PtrOperand){
                     ToInstrument.push_back(&Inst);
                 }
             }
@@ -140,6 +168,10 @@ namespace adin{
                 llvm_unreachable("operand of address must be normal align with type size");
             }
             Changed |= instrumentMemAccess(Inst);
+        }
+
+        for (auto Inst : ToMemFunInstrument){
+            instrumentMemIntrinsic(Inst);
         }
 
         return Changed;
