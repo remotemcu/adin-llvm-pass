@@ -28,7 +28,8 @@ define void @q(i8*) #0 {
 ; CHECK: call void @__adin_memcpy_(i8* %5, i8* bitcast (%union.SYSCTRL_OSC8M_Type* getelementptr inbounds (%struct.Sysctrl, %struct.Sysctrl* null, i32 0, i32 1) to i8*), i32 4)
 ; CHECK: call void @__adin_memcpy_(i8* bitcast (%union.SYSCTRL_OSC8M_Type* getelementptr inbounds (%struct.Sysctrl, %struct.Sysctrl* null, i32 0, i32 1) to i8*), i8* %6, i32 4)
 ; CHECK: call void @__adin_memset_(i8* %7, i8 0, i32 11)
-; CHECK: call void @__adin_memmove_(i8* %8, i8* %9, i32 11)
+; cHECK: call void @__adin_memmove_(i8* %8, i8* %9, i32 11)
+; CHECK: call void @llvm.memmove.p0i8.p0i8.i64(i8* %8, i8* %9, i64 11, i32 1, i1 false)
   ret void
 }
 

@@ -25,7 +25,7 @@ static const size_t kShadowScale = 4;
 
 static Function *MemStoreFn;
 static Function *MemLoadFn;
-static Function *MemMemmoveFn;
+//static Function *MemMemmoveFn;
 static Function *MemMemcpyFn;
 static Function *MemMemsetFn;
 
@@ -42,12 +42,12 @@ void initMemFn(Module &M, const std::string NameStore,  const std::string NameLo
     MemLoadFn = cast<Function>(M.getOrInsertFunction(NameLoad, IRB.getInt64Ty(), IRB.getInt8PtrTy(),
                                       IRB.getInt32Ty(), IRB.getInt32Ty())
                                );
-
+#if 0
     MemMemmoveFn = checkSanitizerInterfaceFunction( M.getOrInsertFunction(NameMemmove,
                                               IRB.getVoidTy(), IRB.getInt8PtrTy(),
                                               IRB.getInt8PtrTy(), IRB.getInt32Ty()
                                                                              ));
-
+#endif
     MemMemcpyFn = checkSanitizerInterfaceFunction((M.getOrInsertFunction(NameMemcpy,
                                               IRB.getVoidTy(), IRB.getInt8PtrTy(),
                                                      IRB.getInt8PtrTy(), IRB.getInt32Ty())
@@ -61,9 +61,10 @@ void initMemFn(Module &M, const std::string NameStore,  const std::string NameLo
 
 bool instrumentMemIntrinsic(MemIntrinsic *MI) {
     IRBuilder<> IRB(MI);
-    if (isa<MemTransferInst>(MI)) {
+    if (isa<MemTransferInst>(MI) && isa<MemCpyInst>(MI)) {
         IRB.CreateCall(
-            isa<MemMoveInst>(MI) ? MemMemmoveFn : MemMemcpyFn,
+            MemMemcpyFn,
+            //isa<MemMoveInst>(MI) ? MemMemmoveFn : MemMemcpyFn,
             {IRB.CreatePointerCast(MI->getOperand(0), IRB.getInt8PtrTy(), "dest_i8ptr_"),
              IRB.CreatePointerCast(MI->getOperand(1), IRB.getInt8PtrTy(), "src_i8ptr_"),
              IRB.CreateIntCast(MI->getOperand(2), IRB.getInt32Ty(), false, "size_int32_")});
