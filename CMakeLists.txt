@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.4)
 
+project(ADIN CXX)
+
 message("################################## YOUR_LLVM_PATH PATH : $ENV{YOUR_LLVM_PATH} ##################################")
 
 # we need YOUR_LLVM_PATH in order not automatically set LLVM_DIR
