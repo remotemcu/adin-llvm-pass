@@ -108,7 +108,7 @@ namespace adin{
         return false;
     }
 
-    virtual bool runOnFunction(Function &F) {
+    virtual bool runOnFunction(Function &F) override{
 
         ADIN_LOG(__DEBUG) << "Examine function: " << F.getName();
 
