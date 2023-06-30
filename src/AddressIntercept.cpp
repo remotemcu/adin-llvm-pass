@@ -140,14 +140,15 @@ namespace adin{
 
                 if(AllocaAddressSkip.getValue() &&
                         AllocaRecognizer.isProbablyAllocaOperation(op.PtrOperand)){
-                    ADIN_LOG(__DEBUG) << "Inst Alloca skip: " << Inst;
+                    ADIN_LOG(__DEBUG) << "Inst Alloca, local var detect: " << Inst;
+                    ADIN_LOG(__DEBUG) << "Skip instuction";
                     continue;
                 }
 
                 if(SimpleGlobalVarSkip.getValue()){
                     const GlobalValue* GV = dyn_cast<GlobalValue>(op.PtrOperand);
                     if(GV != nullptr){
-                        ADIN_LOG(__DEBUG) << "Simple Global Variable: " << *op.PtrOperand;
+                        ADIN_LOG(__DEBUG) << "Simple Global Variable detect: " << *op.PtrOperand;
                         ADIN_LOG(__DEBUG) << "Skip instuction: " << Inst;
                         continue;
                     }
