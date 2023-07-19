@@ -85,7 +85,7 @@ extern "C" llvm_value_type __adin_load_(const llvm_pass_addr pointer, llvm_pass_
 
 Finally, you can use the LLVM IR code to continue with the compilation process, linking, and generating the final executable or library as needed.
 
-Yes, the `opt` utility provided by the [**ADIN LLVM fork**]() also allows you to hook `memmove`, `memcpy`, and `memset` operations in addition to store and load operations. You can enable the hooking of these memory operations using specific options provided by `opt`. Here are the options you can use:
+Yes, the `opt` utility provided by the [**ADIN LLVM fork**](https://github.com/remotemcu/adin-llvm) also allows you to hook `memmove`, `memcpy`, and `memset` operations in addition to store and load operations. You can enable the hooking of these memory operations using specific options provided by `opt`. Here are the options you can use:
 
 ```sh
 $ opt --help | grep adin
