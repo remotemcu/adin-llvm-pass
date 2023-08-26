@@ -4,7 +4,7 @@
 
 
 ## Introduction:
-The **ADIN LLVM pass** is Transform LLVM pass for Runtime Hooking of Memory Operations is a crucial component within the [**ADIN LLVM fork**](https://github.com/remotemcu/adin-llvm). Designed to enhance the capabilities of the LLVM compiler infrastructure, this pass(plugin) facilitates the dynamic modification of memory operations, such as store and load operations, by replacing them with custom hook functions at runtime. By integrating this powerful plugin(pass) into your development workflow, you can gain fine-grained control over memory access and inject custom logic into your programs.
+The **ADIN LLVM pass** is Transform LLVM pass for Compile-time Hooking of Memory Operations is a crucial component within the [**ADIN LLVM fork**](https://github.com/remotemcu/adin-llvm). Designed to enhance the capabilities of the LLVM compiler infrastructure, this pass(plugin) facilitates the dynamic modification of memory operations, such as store and load operations, by replacing them with custom hook functions at compile-time. By integrating this powerful plugin(pass) into your development workflow, you can gain fine-grained control over memory access and inject custom logic into your programs.
 
 
 ## How to Build
